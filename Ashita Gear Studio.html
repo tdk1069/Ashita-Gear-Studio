@@ -1,0 +1,2289 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ashita Gear Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app bar on top, tab strip, then a three-column workspace (sets / paper doll / slot picker) that stacks on phones. */
+:root {
+  --bg: #0a0f1f; --bg-deep: #060a15;
+  --panel: #121b37; --panel-2: #18234a; --win-top: #1f2d5c; --win-bot: #111936;
+  --edge: #5568a8; --edge-soft: #2a3868; --edge-faint: #1e2a52;
+  --fg: #e9edf9; --muted: #9aa8d0; --faint: #6c7aa6;
+  --gold: #e3bd62; --gold-ink: #261b04; --gold-soft: rgba(227,189,98,.16);
+  --ok: #72d6a0; --warn: #f0c05a; --bad: #f27c72; --info: #86b4ff;
+  --font-display: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --font-body: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body {
+  margin: 0; color: var(--fg); font: 16px/1.4 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 40px;
+  background: radial-gradient(1200px 500px at 50% -120px, #1a2650 0%, transparent 70%), var(--bg);
+  min-height: 100%;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+h1, h2, h3, h4, p { margin: 0; }
+.wrap { max-width: 1320px; margin: 0 auto; }
+
+/* App bar */
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 14px 0 10px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand svg { flex: none; }
+.brand h1 { font: 600 19px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.brand small { display: block; font: 500 11px/1.2 var(--font-body); color: var(--muted); letter-spacing: .14em; text-transform: uppercase; margin-top: 4px; }
+.bar-mid { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: 1 1 260px; min-width: 0; }
+.bar-end { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 4px; border: 1px solid var(--edge-soft); background: linear-gradient(180deg, var(--panel-2), var(--panel)); cursor: pointer; font-weight: 600; font-size: 15px; white-space: nowrap; }
+.btn:hover { border-color: var(--edge); background: linear-gradient(180deg, #213068, var(--panel-2)); }
+.btn.primary { background: linear-gradient(180deg, #f0cd77, var(--gold)); color: var(--gold-ink); border-color: #b9923a; }
+.btn.primary:hover { background: linear-gradient(180deg, #f7d98e, #ecc66f); }
+.btn.small { padding: 4px 9px; font-size: 14px; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--fg); border-color: var(--edge-soft); background: var(--panel); }
+.btn.danger { color: var(--bad); }
+.btn.armed { background: var(--bad); color: #2b0805; border-color: var(--bad); }
+.btn[disabled] { opacity: .45; cursor: default; }
+.icon-btn { width: 30px; height: 30px; padding: 0; }
+
+input[type=text], input[type=number], select, textarea {
+  background: var(--bg-deep); border: 1px solid var(--edge-soft); border-radius: 4px; padding: 7px 9px; min-width: 0; width: 100%;
+}
+input:hover, select:hover, textarea:hover { border-color: var(--edge); }
+select { appearance: auto; padding-right: 4px; }
+textarea { resize: vertical; font-family: var(--font-mono); font-size: 13px; line-height: 1.45; }
+label.field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+.inline-input { width: auto; flex: 1 1 140px; }
+
+.pill-select { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.pill-select select { width: auto; max-width: 220px; font-weight: 600; }
+input[type=text].projname { width: 190px; max-width: 100%; background: transparent; border-color: transparent; font-weight: 600; }
+input[type=text].projname:hover, input[type=text].projname:focus { background: var(--bg-deep); border-color: var(--edge-soft); }
+
+/* Tabs */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--edge-soft); overflow-x: auto; scrollbar-width: thin; margin-bottom: 18px; }
+.tab { padding: 10px 18px; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); font: 600 14px var(--font-display); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; display: flex; gap: 8px; align-items: center; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected=true] { color: var(--gold); border-bottom-color: var(--gold); }
+.badge { display: inline-block; min-width: 20px; padding: 1px 6px; border-radius: 10px; font: 700 12px/1.4 var(--font-body); text-align: center; background: var(--edge-faint); color: var(--muted); }
+.badge.err { background: var(--bad); color: #2b0805; }
+.badge.warn { background: var(--warn); color: #2b1d02; }
+
+/* Windows (FFXI-style panels) */
+.win { background: linear-gradient(180deg, var(--win-top), var(--win-bot)); border: 1px solid var(--edge); border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 10px 30px rgba(0,0,0,.35); }
+.win > header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--edge-soft); flex-wrap: wrap; }
+.win h2, .win h3 { font: 600 14px var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.win .body { padding: 14px; }
+.plain { background: var(--panel); border: 1px solid var(--edge-soft); border-radius: 6px; }
+
+.workspace { display: grid; grid-template-columns: 230px minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+@media (max-width: 1080px) { .workspace { grid-template-columns: 200px minmax(0, 1fr); } .workspace > .inspector { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .workspace { grid-template-columns: minmax(0, 1fr); } }
+
+/* Set list */
+.setlist { display: grid; gap: 4px; padding: 8px; max-height: 520px; overflow: auto; }
+.setrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; padding: 8px 10px; border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; min-width: 0; }
+.setrow:hover { background: rgba(255,255,255,.05); }
+.setrow[aria-current=true] { background: var(--gold-soft); border-color: rgba(227,189,98,.5); }
+.setrow b { font-weight: 600; overflow-wrap: anywhere; }
+.setrow span { color: var(--muted); font-size: 13px; }
+.setrow .cnt { grid-row: 1 / 3; grid-column: 2; align-self: center; font: 600 13px var(--font-mono); color: var(--faint); }
+.setrow[aria-current=true] .cnt { color: var(--gold); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Paper doll */
+.doll-wrap { position: relative; padding: 18px; }
+.doll-title { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 14px; }
+.doll-title input.name { font: 600 22px var(--font-display); letter-spacing: .04em; background: transparent; border-color: transparent; padding: 4px 8px; flex: 1 1 200px; width: auto; }
+.doll-title input.name:hover, .doll-title input.name:focus { background: var(--bg-deep); border-color: var(--edge-soft); }
+.doll { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 640px; margin: 0 auto; }
+.doll-crest { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: .09; }
+.doll-crest svg { width: 70%; height: auto; }
+.slot { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; text-align: left; min-height: 104px; padding: 8px 9px 9px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--edge-soft); background: linear-gradient(180deg, rgba(8,12,28,.9), rgba(14,20,44,.9)); box-shadow: inset 0 2px 8px rgba(0,0,0,.5); min-width: 0; }
+.slot:hover { border-color: var(--edge); background: linear-gradient(180deg, rgba(12,18,40,.95), rgba(22,31,66,.95)); }
+.slot[aria-pressed=true] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 18px rgba(227,189,98,.25); }
+.slot[aria-pressed=true]::after { content: ''; position: absolute; left: -9px; top: 12px; border: 6px solid transparent; border-left-color: var(--gold); border-right: 0; }
+.slot .sl { font: 600 11px var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; gap: 4px; }
+.slot .gem { width: 8px; height: 8px; transform: rotate(45deg); background: var(--edge-faint); flex: none; margin-top: 2px; }
+.slot.filled .gem { background: var(--gold); box-shadow: 0 0 6px rgba(227,189,98,.7); }
+.slot .item { font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; font-size: 15px; }
+.slot .empty { color: var(--faint); font-weight: 400; font-style: italic; font-size: 14px; }
+.slot .meta { display: flex; gap: 4px; flex-wrap: wrap; font-size: 11px; }
+.tag { padding: 0 5px; border-radius: 3px; background: var(--edge-faint); color: var(--info); font-weight: 600; letter-spacing: .03em; }
+.tag.raw { color: var(--warn); }
+@media (max-width: 520px) { .doll { gap: 6px; } .slot { min-height: 88px; padding: 6px; } .slot .item { font-size: 13px; } .doll-wrap { padding: 10px; } }
+
+.used-in { margin-top: 16px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 14px; }
+.chip { padding: 2px 9px; border-radius: 12px; border: 1px solid var(--edge-soft); background: var(--panel); font-size: 13px; cursor: pointer; color: var(--fg); }
+.chip:hover { border-color: var(--gold); }
+textarea.note { margin-top: 12px; min-height: 40px; font-family: var(--font-body); font-size: 14px; }
+
+/* Inspector / picker */
+.inspector .body { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.results { display: grid; max-height: 280px; overflow: auto; border: 1px solid var(--edge-soft); border-radius: 4px; background: var(--bg-deep); }
+.result { text-align: left; background: none; border: 0; border-bottom: 1px solid var(--edge-faint); padding: 8px 10px; cursor: pointer; overflow-wrap: anywhere; }
+.result:last-child { border-bottom: 0; }
+.result:hover { background: var(--gold-soft); }
+.result.custom { color: var(--gold); font-weight: 600; }
+.result[aria-current=true] { background: var(--gold-soft); }
+.hint { color: var(--muted); font-size: 14px; }
+.hint.small { font-size: 13px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sample-note { font-size: 12px; color: var(--faint); }
+
+/* Rules */
+.handler-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.hpill { padding: 7px 14px; border-radius: 4px; border: 1px solid var(--edge-soft); background: var(--panel); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; font-weight: 600; }
+.hpill:hover { border-color: var(--edge); }
+.hpill[aria-selected=true] { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.handler-info { margin-bottom: 14px; padding: 10px 14px; border-left: 3px solid var(--info); background: rgba(134,180,255,.07); border-radius: 0 4px 4px 0; }
+.handler-info code { font-family: var(--font-mono); font-size: 13px; color: var(--info); }
+.rules { display: grid; gap: 14px; max-width: 980px; }
+.rule { overflow: hidden; }
+.rule.off { opacity: .55; }
+.rule.flash { animation: flash 1.2s ease-out 1; }
+@keyframes flash { from { box-shadow: 0 0 0 3px var(--gold); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .rule.flash { animation: none; outline: 2px solid var(--gold); } }
+.rule-head { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--edge-soft); flex-wrap: wrap; }
+.rule-head .num { font: 700 12px var(--font-mono); color: var(--faint); width: 22px; text-align: center; }
+.rule-head input.rname { flex: 1 1 200px; width: auto; background: transparent; border-color: transparent; font-weight: 600; }
+.rule-head input.rname:hover, .rule-head input.rname:focus { background: var(--bg-deep); border-color: var(--edge-soft); }
+.toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-size: 14px; color: var(--muted); }
+.toggle input { width: 16px; height: 16px; accent-color: var(--gold); }
+.rule-body { display: grid; gap: 14px; padding: 12px 14px 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 860px) { .rule-body { grid-template-columns: minmax(0, 1fr); } }
+.col-title { font: 700 12px var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+.english { grid-column: 1 / -1; padding: 9px 12px; border-radius: 4px; background: rgba(0,0,0,.25); color: #cfd8f5; border-left: 3px solid var(--gold); }
+.english b { color: var(--fg); }
+.group { border-left: 2px solid var(--edge); padding-left: 10px; display: grid; gap: 8px; }
+.group .group { margin-top: 2px; border-left-style: dashed; }
+.group-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.logic { font-weight: 700; font-size: 12px; letter-spacing: .08em; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--edge); background: var(--panel); cursor: pointer; }
+.logic.or { color: var(--warn); border-color: rgba(240,192,90,.6); }
+.logic.and { color: var(--info); }
+.crow { display: grid; grid-template-columns: minmax(120px, 1.1fr) minmax(90px, .9fr) minmax(90px, 1fr) auto; gap: 6px; align-items: center; }
+.crow.two { grid-template-columns: minmax(120px, 1.1fr) minmax(0, 1.9fr) auto; }
+.crow.rawc { grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr) auto; }
+@media (max-width: 560px) { .crow, .crow.two, .crow.rawc { grid-template-columns: 1fr 1fr; } .crow > :last-child { justify-self: end; } }
+.arow { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(0, 1.6fr) auto; gap: 6px; align-items: start; }
+.arow .stack { display: grid; gap: 6px; }
+@media (max-width: 560px) { .arow { grid-template-columns: 1fr auto; } .arow .stack { grid-column: 1 / -1; grid-row: 2; } }
+.actions-list { display: grid; gap: 8px; }
+.pair { display: flex; gap: 6px; flex-wrap: wrap; }
+.pair > * { flex: 1 1 100px; min-width: 0; }
+.raw-flag { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--warn); }
+.add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.empty-state { padding: 28px; text-align: center; color: var(--muted); border: 1px dashed var(--edge-soft); border-radius: 6px; max-width: 980px; }
+
+/* Profile tab */
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; max-width: 1100px; }
+@media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.stack-16 { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+code { overflow-wrap: anywhere; font-family: var(--font-mono); font-size: .88em; }
+.form { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.row-item { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--edge-faint); border-radius: 4px; background: rgba(0,0,0,.18); }
+details.adv { border: 1px solid var(--edge-soft); border-radius: 6px; background: var(--panel); }
+details.adv > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--muted); }
+details.adv[open] > summary { border-bottom: 1px solid var(--edge-soft); color: var(--fg); }
+details.adv .inner { padding: 12px 14px; display: grid; gap: 12px; }
+
+/* Lua + checks */
+.lua-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .lua-grid { grid-template-columns: minmax(0, 1fr); } .lua-grid .checks { order: -1; } }
+pre.lua { margin: 0; padding: 14px; overflow: auto; max-height: 72vh; background: var(--bg-deep); font: 13px/1.55 var(--font-mono); tab-size: 4; border-radius: 0 0 6px 6px; color: #d5dcf2; }
+.lc { color: #6f7fa8; font-style: italic; } .ls { color: #9fdc9a; } .ln { color: #f2a86c; } .lk { color: #c9a0ff; } .ll { color: #f2a86c; } .la { color: #7fc4ff; } .lf { color: #e8d48a; }
+.issue { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 10px 12px; border-bottom: 1px solid var(--edge-faint); }
+.issue:last-child { border-bottom: 0; }
+.issue .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; }
+.issue.error .dot { background: var(--bad); } .issue.warn .dot { background: var(--warn); } .issue.info .dot { background: var(--info); }
+.issue b { font-weight: 600; }
+.issue p { color: var(--muted); font-size: 14px; grid-column: 2; }
+.issue .go { grid-column: 2; justify-self: start; }
+.allgood { padding: 18px; color: var(--ok); font-weight: 600; }
+.note-line { padding: 8px 12px; border-bottom: 1px solid var(--edge-faint); font-size: 14px; }
+.note-line:last-child { border-bottom: 0; }
+.note-line .ln { color: var(--faint); font: 12px var(--font-mono); margin-right: 8px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 14px; border-bottom: 1px solid var(--edge-soft); font-size: 14px; color: var(--muted); }
+.stats b { color: var(--fg); font-family: var(--font-mono); }
+
+/* Dialog + toast */
+.scrim { position: fixed; inset: 0; background: rgba(3,6,14,.72); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.dialog { width: min(640px, 100%); max-height: 92vh; overflow: auto; }
+.dialog .body { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.dialog footer { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--edge-soft); flex-wrap: wrap; }
+.tmpl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .tmpl-grid { grid-template-columns: 1fr; } }
+.tmpl { text-align: left; padding: 10px 12px; border: 1px solid var(--edge-soft); background: var(--panel); border-radius: 4px; cursor: pointer; display: grid; gap: 2px; }
+.tmpl:hover { border-color: var(--edge); }
+.tmpl[aria-pressed=true] { border-color: var(--gold); background: var(--gold-soft); }
+.tmpl small { color: var(--muted); font-size: 13px; }
+.err-text { color: var(--bad); font-size: 14px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: #0d1530; border: 1px solid var(--gold); color: var(--fg); padding: 10px 16px; border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,.5); display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px); }
+.hidden-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+</style>
+<div id="app" aria-live="polite"></div>
+<script>
+/* Ashita Gear Studio core: model, Lua generation, Lua import, validation, descriptions.
+   No DOM access in this file. Parsing, validation and generation are separate sections. */
+(function (root) {
+'use strict';
+
+/* ------------------------------------------------------------------ */
+/* Reference data (from the LuAshitacast docs)                         */
+/* ------------------------------------------------------------------ */
+const SLOTS = ['Main','Sub','Range','Ammo','Head','Neck','Ear1','Ear2','Body','Hands','Ring1','Ring2','Back','Waist','Legs','Feet'];
+
+const HANDLERS = [
+  { id:'HandleDefault',     label:'Default',     action:false, spell:false, blurb:'Runs continuously while you are not performing an action. This is where idle, resting and engaged gear belong.' },
+  { id:'HandlePrecast',     label:'Precast',     action:true,  spell:true,  blurb:'Runs when you start a spell, before the spell packet is sent. Use it for fast cast and quick magic gear.' },
+  { id:'HandleMidcast',     label:'Midcast',     action:true,  spell:true,  blurb:'Runs after the spell packet is sent. Use it for gear that changes spell potency, accuracy or recast.' },
+  { id:'HandleAbility',     label:'Ability',     action:true,  spell:false, blurb:'Runs when you use a job ability.' },
+  { id:'HandleWeaponskill', label:'Weaponskill', action:true,  spell:false, blurb:'Runs when you use a weaponskill.' },
+  { id:'HandleItem',        label:'Item',        action:true,  spell:false, blurb:'Runs when you use an item.' },
+  { id:'HandlePreshot',     label:'Preshot',     action:true,  spell:false, blurb:'Runs before a ranged attack is sent. Use it for snapshot or rapid shot gear.' },
+  { id:'HandleMidshot',     label:'Midshot',     action:true,  spell:false, blurb:'Runs after the ranged attack is sent. Use it for ranged accuracy and damage gear.' },
+];
+const GEN_ORDER = ['HandleDefault','HandleAbility','HandleItem','HandlePrecast','HandleMidcast','HandlePreshot','HandleMidshot','HandleWeaponskill'];
+const RAW_HANDLERS = ['OnLoad','OnUnload','HandleCommand'];
+const ALL_HANDLER_NAMES = new Set(GEN_ORDER.concat(RAW_HANDLERS));
+
+const ELEMENTS = ['Fire','Ice','Wind','Earth','Thunder','Water','Light','Dark'];
+const SPELL_SKILLS = ['Divine Magic','Healing Magic','Enhancing Magic','Enfeebling Magic','Elemental Magic','Dark Magic','Summoning','Ninjutsu','Singing','Blue Magic','Geomancy'];
+const SPELL_TYPES = ['White Magic','Black Magic','Summoning','Ninjutsu','Bard Song','Blue Magic'];
+const STATUSES = ['Idle','Engaged','Resting'];
+const JOB_ABBRS = ['WAR','MNK','WHM','BLM','RDM','THF','PLD','DRK','BST','BRD','RNG','SAM','NIN','DRG','SMN','BLU','COR','PUP','DNC','SCH','GEO','RUN'];
+
+const NUM_OPS = [['<','is below'],['<=','is at most'],['>','is above'],['>=','is at least'],['==','is exactly'],['~=','is not']];
+const EQ_OPS  = [['==','is'],['~=','is not']];
+
+/* Condition kinds. `src` is the gData table the value comes from. */
+const CONDS = {
+  'player.status': { group:'You', label:'Your status',          noun:'your status',        src:'player',      field:'Status',        type:'enum', options:STATUSES, ops:EQ_OPS, def:'Engaged' },
+  'player.hpp':    { group:'You', label:'Your HP %',            noun:'your HP',            src:'player',      field:'HPP',           type:'num',  ops:NUM_OPS, def:50, unit:'%' },
+  'player.mpp':    { group:'You', label:'Your MP %',            noun:'your MP',            src:'player',      field:'MPP',           type:'num',  ops:NUM_OPS, def:50, unit:'%' },
+  'player.tp':     { group:'You', label:'Your TP',              noun:'your TP',            src:'player',      field:'TP',            type:'num',  ops:NUM_OPS, def:1000 },
+  'player.moving': { group:'You', label:'Movement',             type:'bool', src:'player', field:'IsMoving', ops:[['true','you are moving'],['false','you are standing still']], def:'true' },
+  'player.subjob': { group:'You', label:'Your sub job',         noun:'your sub job',       src:'player',      field:'SubJob',        type:'enum', options:JOB_ABBRS, ops:EQ_OPS, def:'NIN' },
+  'player.level':  { group:'You', label:'Your main job level',  noun:'your main job level',src:'player',      field:'MainJobLevel',  type:'num',  ops:NUM_OPS, def:75 },
+  'env.day':       { group:'World', label:'Day element',        noun:'the day element',    src:'environment', field:'DayElement',    type:'enum', options:ELEMENTS, ops:EQ_OPS, def:'Fire' },
+  'env.weather':   { group:'World', label:'Weather element',    noun:'the weather element',src:'environment', field:'WeatherElement',type:'enum', options:['None'].concat(ELEMENTS), ops:EQ_OPS, def:'Fire' },
+  'env.time':      { group:'World', label:'Vana\'diel time (hour)', noun:'the Vana\'diel hour', src:'environment', field:'Time',     type:'num',  ops:NUM_OPS, def:18 },
+  'env.area':      { group:'World', label:'Zone name',          noun:'the zone',           src:'environment', field:'Area',          type:'text', ops:EQ_OPS, def:'' },
+  'env.moon':      { group:'World', label:'Moon %',             noun:'the moon',           src:'environment', field:'MoonPercent',   type:'num',  ops:NUM_OPS, def:50, unit:'%' },
+  'action.name':   { group:'Action', label:'Action name',       noun:'the action',         src:'action',      field:'Name',          type:'name', ops:[['==','is'],['~=','is not'],['contains','contains'],['oneof','is one of']], def:'', needsAction:true },
+  'action.skill':  { group:'Action', label:'Spell skill',       noun:'the spell skill',    src:'action',      field:'Skill',         type:'enum', options:SPELL_SKILLS, ops:EQ_OPS, def:'Healing Magic', needsAction:true, spellOnly:true },
+  'action.element':{ group:'Action', label:'Spell element',     noun:'the spell element',  src:'action',      field:'Element',       type:'enum', options:ELEMENTS.concat(['Non-Elemental']), ops:EQ_OPS, def:'Fire', needsAction:true, spellOnly:true },
+  'action.type':   { group:'Action', label:'Spell type',        noun:'the spell type',     src:'action',      field:'Type',          type:'enum', options:SPELL_TYPES, ops:EQ_OPS, def:'White Magic', needsAction:true, spellOnly:true },
+  'action.mp':     { group:'Action', label:'Spell MP cost',     noun:'the spell MP cost',  src:'action',      field:'MpCost',        type:'num',  ops:NUM_OPS, def:100, needsAction:true, spellOnly:true },
+  'buff':          { group:'Other', label:'Status effect',      type:'buff', ops:[['active','is active on you'],['inactive','is not active on you']], def:'' },
+  'pet':           { group:'Other', label:'Pet',                type:'pet',  ops:[['has','you have a pet out'],['none','you have no pet']], def:'' },
+  'var':           { group:'Other', label:'Profile variable',   type:'var',  ops:EQ_OPS, def:'' },
+  'raw':           { group:'Other', label:'Custom Lua check',   type:'raw',  ops:[], def:'' },
+};
+const FIELD_KIND = {};
+Object.keys(CONDS).forEach(k => { const s = CONDS[k]; if (s.src && s.field) FIELD_KIND[s.src + '.' + s.field] = k; });
+
+const ACTION_TYPES = [
+  ['equipSet','Equip a gear set'],
+  ['equipSetVar','Equip a set picked by a variable'],
+  ['equipItem','Equip a single item'],
+  ['message','Show a chat message'],
+  ['setVar','Change a variable'],
+  ['rawLua','Custom Lua'],
+];
+
+/* ------------------------------------------------------------------ */
+/* Small helpers                                                       */
+/* ------------------------------------------------------------------ */
+const LUA_KEYWORDS = new Set('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'.split(' '));
+let uidN = 0;
+function uid(p) { return (p || 'id') + '_' + Math.random().toString(36).slice(2, 7) + (uidN++).toString(36); }
+function isIdent(s) { return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s) && !LUA_KEYWORDS.has(s); }
+function luaStr(s) {
+  s = String(s == null ? '' : s);
+  const esc = (t, q) => t.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/\r/g, '\\r').split(q).join('\\' + q);
+  if (s.indexOf("'") >= 0 && s.indexOf('"') < 0) return '"' + esc(s, '"') + '"';
+  return "'" + esc(s, "'") + "'";
+}
+function luaNum(n) { n = Number(n); return isFinite(n) ? String(n) : '0'; }
+function setPath(name) {
+  return 'sets' + String(name).split('.').filter(Boolean).map(s => isIdent(s) ? '.' + s : '[' + luaStr(s) + ']').join('');
+}
+function dedent(text) {
+  const lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+  while (lines.length && !lines[0].trim()) lines.shift();
+  while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+  let min = Infinity;
+  lines.forEach(l => { if (l.trim()) min = Math.min(min, l.match(/^[ \t]*/)[0].length); });
+  if (!isFinite(min)) min = 0;
+  return lines.map(l => l.slice(min).replace(/\s+$/, '')).join('\n');
+}
+function indentText(text, pad) { return text.split('\n').map(l => l ? pad + l : l).join('\n'); }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function emptyGroup(op) { return { op: op || 'AND', children: [] }; }
+function isGroup(n) { return n && Array.isArray(n.children); }
+
+/* ------------------------------------------------------------------ */
+/* Model factories                                                     */
+/* ------------------------------------------------------------------ */
+function newSet(name) { return { id: uid('set'), name: name || 'NewSet', note: '', slots: {}, extras: [] }; }
+function newItem(name) { return { name: name || '', augPath: '', augments: [], extras: [], raw: null }; }
+function newCond(kind) {
+  const spec = CONDS[kind] || CONDS['player.status'];
+  const c = { kind: kind, op: spec.ops && spec.ops[0] ? spec.ops[0][0] : '', value: spec.def == null ? '' : spec.def };
+  if (spec.type === 'num') c.op = '>';
+  if (kind === 'raw') c.expr = '';
+  if (kind === 'var') c.varId = '';
+  return c;
+}
+function newRule(handler) {
+  return { id: uid('rule'), kind: 'rule', handler: handler, name: '', enabled: true, exclusive: false, when: emptyGroup('AND'), actions: [] };
+}
+function newRawRule(handler, code) {
+  return { id: uid('rule'), kind: 'raw', handler: handler, name: '', enabled: true, exclusive: false, code: code || '' };
+}
+function newAction(type) {
+  switch (type) {
+    case 'equipSet': return { type, setId: '' };
+    case 'equipSetVar': return { type, prefix: '', varId: '' };
+    case 'equipItem': return { type, slot: 'Main', item: '' };
+    case 'message': return { type, text: '' };
+    case 'setVar': return { type, varId: '', value: '' };
+    default: return { type: 'rawLua', code: '' };
+  }
+}
+function newProfile(name, job) {
+  return {
+    id: uid('prof'), name: name || job || 'Profile', job: job || '',
+    settings: { allowAddSet: true, addSetBackup: true },
+    sets: [], variables: [], rules: [], commands: [],
+    names: { player: 'player', action: 'action', environment: 'environment' },
+    raw: { custom: '', OnLoad: '', OnUnload: '', HandleCommand: '' },
+    importReport: null,
+  };
+}
+function findSet(profile, idOrName) {
+  if (!idOrName) return null;
+  let s = profile.sets.find(x => x.id === idOrName);
+  if (s) return s;
+  const low = String(idOrName).toLowerCase();
+  return profile.sets.find(x => x.name.toLowerCase() === low) || null;
+}
+function findVar(profile, id) { return profile.variables.find(v => v.id === id) || null; }
+
+/* ------------------------------------------------------------------ */
+/* Lua generation                                                      */
+/* ------------------------------------------------------------------ */
+function keyText(k) { return isIdent(k) ? k : '[' + luaStr(k) + ']'; }
+
+function itemExpr(it) {
+  if (!it) return null;
+  if (it.raw) return it.raw;
+  const name = (it.name || '').trim();
+  if (!name) return null;
+  const aug = (it.augments || []).map(a => String(a).trim()).filter(Boolean);
+  const extras = it.extras || [];
+  if (!it.augPath && !aug.length && !extras.length) return luaStr(name);
+  const parts = ['Name = ' + luaStr(name)];
+  if (it.augPath) parts.push('AugPath = ' + luaStr(it.augPath));
+  if (aug.length === 1) parts.push('Augment = ' + luaStr(aug[0]));
+  else if (aug.length > 1) parts.push('Augment = { ' + aug.map(luaStr).join(', ') + ' }');
+  extras.forEach(e => parts.push(e.k + ' = ' + e.raw));
+  return '{ ' + parts.join(', ') + ' }';
+}
+
+function emitSetBody(set, pad, kids) {
+  const lines = [];
+  if (set && set.note) set.note.split('\n').forEach(n => lines.push(pad + '-- ' + n));
+  if (set) {
+    SLOTS.forEach(slot => {
+      const e = itemExpr(set.slots[slot]);
+      if (e) lines.push(pad + slot + ' = ' + e + ',');
+    });
+    (set.extras || []).forEach(x => lines.push(pad + (x.k ? x.k + ' = ' : '') + x.raw + ','));
+  }
+  if (kids) lines.push.apply(lines, kids);
+  return lines;
+}
+
+function emitSetTree(profile) {
+  const rootNode = { kids: new Map(), set: null };
+  profile.sets.forEach(s => {
+    const segs = String(s.name).split('.').filter(Boolean);
+    if (!segs.length) return;
+    let n = rootNode;
+    segs.forEach(seg => { if (!n.kids.has(seg)) n.kids.set(seg, { kids: new Map(), set: null }); n = n.kids.get(seg); });
+    n.set = s;
+  });
+  function emit(node, depth) {
+    const pad = '    '.repeat(depth + 1);
+    const out = [];
+    node.kids.forEach((child, key) => {
+      const kidLines = child.kids.size ? emit(child, depth + 1) : null;
+      const body = emitSetBody(child.set, '    '.repeat(depth + 2), kidLines);
+      if (!body.length) out.push(pad + keyText(key) + ' = {},');
+      else { out.push(pad + keyText(key) + ' = {'); out.push.apply(out, body); out.push(pad + '},'); }
+    });
+    return out;
+  }
+  return emit(rootNode, 0);
+}
+
+function condExpr(c, profile, names) {
+  const spec = CONDS[c.kind];
+  if (!spec) return 'false';
+  const nm = (src) => (names && names[src]) || src;
+  switch (spec.type) {
+    case 'enum': case 'text':
+      return nm(spec.src) + '.' + spec.field + ' ' + (c.op === '~=' ? '~=' : '==') + ' ' + luaStr(c.value);
+    case 'num':
+      return nm(spec.src) + '.' + spec.field + ' ' + (['<','<=','>','>=','==','~='].indexOf(c.op) >= 0 ? c.op : '>') + ' ' + luaNum(c.value);
+    case 'bool':
+      return (c.op === 'false' ? 'not ' : '') + nm(spec.src) + '.' + spec.field;
+    case 'name': {
+      const ref = nm('action') + '.Name';
+      if (c.op === 'contains') return 'string.find(' + ref + ', ' + luaStr(c.value) + ', 1, true) ~= nil';
+      if (c.op === 'oneof') {
+        const names2 = String(c.value || '').split(',').map(x => x.trim()).filter(Boolean);
+        if (!names2.length) return 'false';
+        const parts = names2.map(x => ref + ' == ' + luaStr(x));
+        return parts.length === 1 ? parts[0] : '(' + parts.join(' or ') + ')';
+      }
+      return ref + ' ' + (c.op === '~=' ? '~=' : '==') + ' ' + luaStr(c.value);
+    }
+    case 'buff':
+      return 'gData.GetBuffCount(' + luaStr(c.value) + ') ' + (c.op === 'inactive' ? '== 0' : '> 0');
+    case 'pet':
+      return 'gData.GetPet() ' + (c.op === 'none' ? '==' : '~=') + ' nil';
+    case 'var': {
+      const v = findVar(profile, c.varId);
+      if (!v || !isIdent(v.name)) return 'false';
+      return v.name + ' ' + (c.op === '~=' ? '~=' : '==') + ' ' + luaStr(c.value);
+    }
+    case 'raw':
+      return '(' + ((c.expr || '').trim() || 'true') + ')';
+  }
+  return 'false';
+}
+
+function groupExpr(g, profile, names, top) {
+  const parts = (g.children || []).map(ch => isGroup(ch) ? groupExpr(ch, profile, names, false) : condExpr(ch, profile, names)).filter(Boolean);
+  if (!parts.length) return null;
+  if (parts.length === 1) return parts[0];
+  const joined = parts.join(g.op === 'OR' ? ' or ' : ' and ');
+  return top ? joined : '(' + joined + ')';
+}
+
+function actionLines(a, profile) {
+  switch (a.type) {
+    case 'equipSet': {
+      const s = findSet(profile, a.setId) || (a.setName ? { name: a.setName } : null);
+      return s ? ['gFunc.EquipSet(' + setPath(s.name) + ');'] : ['-- (gear set not found, nothing equipped)'];
+    }
+    case 'equipSetVar': {
+      const v = findVar(profile, a.varId);
+      if (!v || !isIdent(v.name)) return ['-- (variable not found, nothing equipped)'];
+      return ['gFunc.EquipSet(' + (a.prefix ? luaStr(a.prefix) + ' .. ' : '') + v.name + ');'];
+    }
+    case 'equipItem':
+      return (a.item || '').trim() ? ['gFunc.Equip(' + luaStr(a.slot) + ', ' + luaStr(a.item) + ');'] : ['-- (no item chosen)'];
+    case 'message':
+      return ['gFunc.Message(' + luaStr(a.text) + ');'];
+    case 'setVar': {
+      const v = findVar(profile, a.varId);
+      return v && isIdent(v.name) ? [v.name + ' = ' + luaStr(a.value) + ';'] : ['-- (variable not found)'];
+    }
+    case 'rawLua':
+      return (a.code || '').trim() ? dedent(a.code).split('\n') : [];
+  }
+  return [];
+}
+
+function ruleComment(r) {
+  const t = (r.name || '').replace(/\s+/g, ' ').trim();
+  return t ? '-- ' + t : null;
+}
+
+function genHandlerBody(profile, hname) {
+  const names = profile.names;
+  const rules = profile.rules.filter(r => r.handler === hname);
+  const L = [];
+  let chain = false;
+  rules.forEach(r => {
+    if (!r.enabled) { L.push('-- Disabled in Gear Studio: ' + (r.name || (r.kind === 'raw' ? 'custom Lua block' : 'unnamed rule')).replace(/\s+/g, ' ')); return; }
+    if (r.kind === 'raw') {
+      if (chain) { L.push('end'); chain = false; }
+      L.push.apply(L, dedent(r.code || '').split('\n').filter((l, i, arr) => !(arr.length === 1 && !l)));
+      return;
+    }
+    const expr = groupExpr(r.when, profile, names, true);
+    const body = [].concat.apply([], r.actions.map(a => actionLines(a, profile))).map(l => '    ' + l);
+    const cm = ruleComment(r);
+    if (r.exclusive && chain) {
+      if (cm) L.push('    ' + cm);
+      if (expr) { L.push('elseif (' + expr + ') then'); L.push.apply(L, body); }
+      else { L.push('else'); L.push.apply(L, body); L.push('end'); chain = false; }
+      return;
+    }
+    if (chain) { L.push('end'); chain = false; }
+    if (cm) L.push(cm);
+    if (expr) { L.push('if (' + expr + ') then'); L.push.apply(L, body); chain = true; }
+    else L.push.apply(L, body.map(l => l.slice(4)));
+  });
+  if (chain) L.push('end');
+  return L;
+}
+
+function withLocals(profile, lines) {
+  const text = lines.join('\n');
+  const decl = { player: 'gData.GetPlayer()', action: 'gData.GetAction()', environment: 'gData.GetEnvironment()' };
+  const out = [];
+  Object.keys(decl).forEach(k => {
+    const alias = profile.names[k] || k;
+    if (new RegExp('(^|[^\\w.])' + alias.replace(/[^\w]/g, '') + '\\b').test(text)) out.push('local ' + alias + ' = ' + decl[k] + ';');
+  });
+  return out.length ? out.concat(lines.length ? [''] : [], lines) : lines;
+}
+
+function generateLua(profile) {
+  const L = [];
+  const w = s => L.push(s);
+  const job = profile.job || profile.name;
+  w('-- Generated by Ashita Gear Studio. Profile: ' + profile.name);
+  w('-- Save as ' + (job || 'Job') + '.lua in ashita/config/addons/luashitacast/<CharName>_<CharId>/');
+  w('');
+  w('local profile = {};');
+  w('');
+  w('local sets = {');
+  emitSetTree(profile).forEach(w);
+  w('};');
+  w('profile.Sets = sets;');
+  if (!/profile\s*\.\s*Packer/.test(profile.raw.custom || '')) w('profile.Packer = {};');
+  w('');
+
+  const vars = profile.variables.filter(v => isIdent(v.name));
+  const needCycle = profile.commands.some(c => c.kind === 'cycle');
+  if (vars.length) {
+    w('-- Variables (change them in game with /lac fwd <command>)');
+    vars.forEach(v => {
+      w('local ' + v.name + ' = ' + luaStr(v.value || (v.options[0] || '')) + ';');
+      if (profile.commands.some(c => c.kind === 'cycle' && c.varId === v.id))
+        w('local ' + v.name + 'Options = { ' + v.options.map(luaStr).join(', ') + ' };');
+    });
+    w('');
+  }
+  if (needCycle) {
+    w('local function CycleValue(list, current)');
+    w('    for i, value in ipairs(list) do');
+    w('        if (value == current) then');
+    w('            return list[(i % #list) + 1];');
+    w('        end');
+    w('    end');
+    w('    return list[1];');
+    w('end');
+    w('');
+  }
+  if ((profile.raw.custom || '').trim()) {
+    w('-- Custom Lua kept from the imported profile');
+    w(dedent(profile.raw.custom));
+    w('');
+  }
+
+  // OnLoad / OnUnload
+  const onLoad = ['gSettings.AllowAddSet = ' + (profile.settings.allowAddSet ? 'true' : 'false') + ';'];
+  if (profile.settings.addSetBackup === false) onLoad.push('gSettings.AddSetBackup = false;');
+  if ((profile.raw.OnLoad || '').trim()) onLoad.push.apply(onLoad, dedent(profile.raw.OnLoad).split('\n'));
+  w('profile.OnLoad = function()');
+  onLoad.forEach(l => w(l ? '    ' + l : l));
+  w('end');
+  w('');
+  w('profile.OnUnload = function()');
+  if ((profile.raw.OnUnload || '').trim()) dedent(profile.raw.OnUnload).split('\n').forEach(l => w(l ? '    ' + l : l));
+  w('end');
+  w('');
+
+  // HandleCommand
+  const cmdLines = [];
+  if ((profile.raw.HandleCommand || '').trim()) cmdLines.push.apply(cmdLines, dedent(profile.raw.HandleCommand).split('\n'));
+  const cmds = profile.commands.filter(c => (c.name || '').trim());
+  if (cmds.length) {
+    cmdLines.push('if (#args > 0) then');
+    cmdLines.push('    local cmd = string.lower(args[1]);');
+    cmds.forEach((c, i) => {
+      cmdLines.push('    ' + (i === 0 ? 'if' : 'elseif') + ' (cmd == ' + luaStr(c.name.trim().toLowerCase()) + ') then');
+      const v = findVar(profile, c.varId);
+      const body = [];
+      if (c.kind === 'cycle' && v && isIdent(v.name)) {
+        body.push(v.name + ' = CycleValue(' + v.name + 'Options, ' + v.name + ');');
+        body.push("gFunc.Message('" + v.name + ": ' .. " + v.name + ');');
+      } else if (c.kind === 'set' && v && isIdent(v.name)) {
+        body.push(v.name + ' = ' + luaStr(c.value) + ';');
+        body.push("gFunc.Message('" + v.name + ": ' .. " + v.name + ');');
+      } else if (c.kind === 'lock') {
+        const s = findSet(profile, c.setId);
+        body.push(s ? 'gFunc.LockSet(' + setPath(s.name) + ', ' + luaNum(c.seconds || 30) + ');' : '-- (gear set not found)');
+      } else if (c.kind === 'raw') {
+        body.push.apply(body, (c.code || '').trim() ? dedent(c.code).split('\n') : ['-- (empty)']);
+      } else body.push('-- (command is not fully set up)');
+      body.forEach(l => cmdLines.push('        ' + l));
+    });
+    cmdLines.push('    end');
+    cmdLines.push('end');
+  }
+  w('profile.HandleCommand = function(args)');
+  cmdLines.forEach(l => w(l ? '    ' + l : l));
+  w('end');
+  w('');
+
+  GEN_ORDER.forEach(h => {
+    const body = withLocals(profile, genHandlerBody(profile, h));
+    w('profile.' + h + ' = function()');
+    body.forEach(l => w(l ? '    ' + l : l));
+    w('end');
+    w('');
+  });
+  w('return profile;');
+  return L.join('\n') + '\n';
+}
+
+/* ------------------------------------------------------------------ */
+/* Plain-English descriptions                                          */
+/* ------------------------------------------------------------------ */
+function opWord(spec, op) {
+  const f = (spec.ops || []).find(o => o[0] === op);
+  return f ? f[1] : op;
+}
+function describeCond(c, profile) {
+  const spec = CONDS[c.kind];
+  if (!spec) return 'an unknown check';
+  switch (spec.type) {
+    case 'enum': case 'text': return spec.noun + ' ' + opWord(spec, c.op) + ' ' + (c.value === '' ? '(blank)' : c.value);
+    case 'num': return spec.noun + ' ' + opWord(spec, c.op) + ' ' + c.value + (spec.unit || '');
+    case 'bool': return opWord(spec, c.op);
+    case 'name': return c.op === 'contains' ? 'the action name contains "' + (c.value || '(blank)') + '"' :
+                        c.op === 'oneof' ? 'the action is one of ' + (c.value || '(none)') :
+                        'the action ' + opWord(spec, c.op) + ' "' + (c.value || '(blank)') + '"';
+    case 'buff': return (c.value || '(no effect chosen)') + ' ' + opWord(spec, c.op);
+    case 'pet': return opWord(spec, c.op);
+    case 'var': { const v = findVar(profile, c.varId); return (v ? v.name : '(missing variable)') + ' ' + (c.op === '~=' ? 'is not' : 'is') + ' ' + c.value; }
+    case 'raw': { const t = (c.expr || '').replace(/\s+/g, ' ').trim(); return 'custom check <' + (t.length > 48 ? t.slice(0, 45) + '...' : t) + '>'; }
+  }
+  return '';
+}
+function describeGroup(g, profile, top) {
+  const parts = (g.children || []).map(ch => isGroup(ch) ? describeGroup(ch, profile, false) : describeCond(ch, profile)).filter(Boolean);
+  if (!parts.length) return '';
+  if (parts.length === 1) return parts[0];
+  const j = parts.join(g.op === 'OR' ? ' or ' : ' and ');
+  return top ? j : '(' + j + ')';
+}
+function describeAction(a, profile) {
+  switch (a.type) {
+    case 'equipSet': { const s = findSet(profile, a.setId) || (a.setName ? { name: a.setName } : null); return s ? 'equip the "' + s.name + '" set' : 'equip a set (none chosen)'; }
+    case 'equipSetVar': { const v = findVar(profile, a.varId); return 'equip the set named "' + (a.prefix || '') + '" + ' + (v ? v.name : '(variable)'); }
+    case 'equipItem': return 'put ' + (a.item || '(no item)') + ' in ' + a.slot;
+    case 'message': return 'show the message "' + a.text + '"';
+    case 'setVar': { const v = findVar(profile, a.varId); return 'set ' + (v ? v.name : '(variable)') + ' to ' + a.value; }
+    case 'rawLua': return 'run custom Lua';
+  }
+  return '';
+}
+function describeRule(r, profile) {
+  if (r.kind === 'raw') return 'Runs your custom Lua code as written.';
+  const cond = describeGroup(r.when, profile, true);
+  const acts = r.actions.map(a => describeAction(a, profile)).join(', then ') || 'do nothing yet';
+  if (cond) return (r.exclusive ? 'Otherwise, if ' : 'If ') + cond + ': ' + acts + '.';
+  return (r.exclusive ? 'Otherwise: ' : 'Always: ') + acts + '.';
+}
+function ruleTitle(r, profile) {
+  if (r.name) return r.name;
+  if (r.kind === 'raw') return 'Custom Lua block';
+  const cond = describeGroup(r.when, profile, true);
+  const a0 = r.actions[0] ? describeAction(r.actions[0], profile) : 'no actions';
+  return cond ? 'When ' + cond : 'Always ' + a0.replace(/^equip /, '');
+}
+
+/* ------------------------------------------------------------------ */
+/* Lexer                                                               */
+/* ------------------------------------------------------------------ */
+class LuaSyntaxError extends Error { constructor(msg, line) { super(msg); this.line = line; this.name = 'LuaSyntaxError'; } }
+
+function longLevel(src, pos) { const m = /^\[(=*)\[/.exec(src.slice(pos, pos + 64)); return m ? m[1].length : -1; }
+function longEnd(src, pos, level) { const close = ']' + '='.repeat(level) + ']'; const k = src.indexOf(close, pos); return k < 0 ? src.length : k + close.length; }
+
+function lex(src) {
+  const toks = [];
+  const n = src.length;
+  let i = 0, line = 1;
+  const nl = (a, b) => { let c = 0; for (let k = a; k < b; k++) if (src.charCodeAt(k) === 10) c++; return c; };
+  while (i < n) {
+    const c = src[i];
+    if (c === '\n') { line++; i++; continue; }
+    if (c === ' ' || c === '\t' || c === '\r' || c === '\f' || c === '\v') { i++; continue; }
+    if (c === '-' && src[i + 1] === '-') {
+      const lv = longLevel(src, i + 2);
+      if (lv >= 0) { const e = longEnd(src, i + 2 + lv + 2, lv); line += nl(i, e); i = e; continue; }
+      while (i < n && src[i] !== '\n') i++;
+      continue;
+    }
+    const s = i;
+    if (c === '"' || c === "'") {
+      let j = i + 1, val = '';
+      while (j < n && src[j] !== c && src[j] !== '\n') {
+        if (src[j] === '\\') {
+          const d = src[j + 1];
+          if (d === undefined) throw new LuaSyntaxError('Unfinished string', line);
+          if (d === 'n') { val += '\n'; j += 2; }
+          else if (d === 't') { val += '\t'; j += 2; }
+          else if (d === 'r') { val += '\r'; j += 2; }
+          else if (d === '\n') { val += '\n'; line++; j += 2; }
+          else if (d >= '0' && d <= '9') { let k = j + 1, num = ''; while (k < n && num.length < 3 && src[k] >= '0' && src[k] <= '9') { num += src[k]; k++; } val += String.fromCharCode(parseInt(num, 10)); j = k; }
+          else { val += d; j += 2; }
+        } else val += src[j++];
+      }
+      if (src[j] !== c) throw new LuaSyntaxError('A string starting on line ' + line + ' is never closed', line);
+      j++; toks.push({ t: 'str', v: val, s, e: j, line }); i = j; continue;
+    }
+    if (c === '[') {
+      const lv = longLevel(src, i);
+      if (lv >= 0) {
+        const e = longEnd(src, i + lv + 2, lv);
+        let inner = src.slice(i + lv + 2, Math.max(i + lv + 2, e - lv - 2));
+        if (inner[0] === '\n') inner = inner.slice(1);
+        toks.push({ t: 'str', v: inner, s, e, line }); line += nl(i, e); i = e; continue;
+      }
+    }
+    if ((c >= '0' && c <= '9') || (c === '.' && src[i + 1] >= '0' && src[i + 1] <= '9')) {
+      const m = /^(0[xX][0-9a-fA-F]+|(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?)/.exec(src.slice(i, i + 40));
+      toks.push({ t: 'num', v: m[0], s, e: i + m[0].length, line }); i += m[0].length; continue;
+    }
+    if (/[A-Za-z_]/.test(c)) {
+      const m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(src.slice(i, i + 80));
+      toks.push({ t: LUA_KEYWORDS.has(m[0]) ? 'kw' : 'name', v: m[0], s, e: i + m[0].length, line }); i += m[0].length; continue;
+    }
+    const three = src.substr(i, 3), two = src.substr(i, 2);
+    if (three === '...') { toks.push({ t: 'op', v: '...', s, e: i + 3, line }); i += 3; continue; }
+    if (['==', '~=', '<=', '>=', '..', '::', '//', '<<', '>>'].indexOf(two) >= 0) { toks.push({ t: 'op', v: two, s, e: i + 2, line }); i += 2; continue; }
+    toks.push({ t: 'op', v: c, s, e: i + 1, line }); i++;
+  }
+  return toks;
+}
+
+/* ------------------------------------------------------------------ */
+/* Token-level structure helpers                                       */
+/* ------------------------------------------------------------------ */
+function matchBlock(toks, i) {
+  let depth = 0;
+  for (let k = i; k < toks.length; k++) {
+    const t = toks[k];
+    if (t.t !== 'kw') continue;
+    if (t.v === 'function' || t.v === 'if' || t.v === 'do' || t.v === 'repeat') depth++;
+    else if (t.v === 'end' || t.v === 'until') { depth--; if (depth === 0) return k; }
+  }
+  throw new LuaSyntaxError("Missing 'end' for the block that starts on line " + toks[i].line, toks[i].line);
+}
+function closeIdx(toks, i) {
+  let depth = 0;
+  for (let k = i; k < toks.length; k++) {
+    const t = toks[k];
+    if (t.t === 'op') {
+      if (t.v === '(' || t.v === '[' || t.v === '{') depth++;
+      else if (t.v === ')' || t.v === ']' || t.v === '}') { depth--; if (depth === 0) return k; }
+    } else if (t.t === 'kw' && t.v === 'function') k = matchBlock(toks, k);
+  }
+  throw new LuaSyntaxError("A '" + toks[i].v + "' on line " + toks[i].line + ' is never closed', toks[i].line);
+}
+function endsExpr(t) {
+  return t.t === 'name' || t.t === 'num' || t.t === 'str' ||
+    (t.t === 'kw' && (t.v === 'true' || t.v === 'false' || t.v === 'nil' || t.v === 'end')) ||
+    (t.t === 'op' && (t.v === ')' || t.v === ']' || t.v === '}' || t.v === '...'));
+}
+const STMT_KW = new Set(['if', 'for', 'while', 'repeat', 'do', 'function', 'local', 'return', 'break', 'goto', 'end', 'else', 'elseif', 'until']);
+
+function exprStmtEnd(toks, start, b) {
+  let depth = 0, k = start;
+  while (k < b) {
+    const t = toks[k];
+    if (depth === 0 && k > start) {
+      if (t.t === 'op' && t.v === ';') return k + 1;
+      if (endsExpr(toks[k - 1]) && (t.t === 'name' || (t.t === 'kw' && STMT_KW.has(t.v)) || (t.t === 'op' && t.v === '::'))) return k;
+    }
+    if (t.t === 'op') {
+      if (t.v === '(' || t.v === '[' || t.v === '{') depth++;
+      else if (t.v === ')' || t.v === ']' || t.v === '}') depth--;
+    } else if (t.t === 'kw' && t.v === 'function') k = matchBlock(toks, k);
+    k++;
+  }
+  return b;
+}
+function stmtEnd(toks, i, b) {
+  const t = toks[i];
+  if (t.t === 'kw') {
+    switch (t.v) {
+      case 'if': case 'do': case 'function': return matchBlock(toks, i) + 1;
+      case 'while': case 'for': { let k = i; while (k < b && !(toks[k].t === 'kw' && toks[k].v === 'do')) k++; return matchBlock(toks, k) + 1; }
+      case 'repeat': { const u = matchBlock(toks, i); return exprStmtEnd(toks, u, b) > u + 1 ? exprStmtEnd(toks, u + 1, b) : u + 1; }
+      case 'local': if (toks[i + 1] && toks[i + 1].t === 'kw' && toks[i + 1].v === 'function') return matchBlock(toks, i + 1) + 1; return exprStmtEnd(toks, i, b);
+      case 'return': return exprStmtEnd(toks, i, b);
+      case 'break': return i + 1;
+      case 'goto': return i + 2;
+    }
+  }
+  if (t.t === 'op' && t.v === '::') return Math.min(b, i + 3);
+  return exprStmtEnd(toks, i, b);
+}
+function splitStatements(toks, a, b) {
+  const out = [];
+  let i = a;
+  while (i < b) {
+    if (toks[i].t === 'op' && toks[i].v === ';') { i++; continue; }
+    const e = Math.max(i + 1, Math.min(stmtEnd(toks, i, b), b));
+    out.push({ a: i, b: e });
+    i = e;
+  }
+  return out;
+}
+function splitTopLevel(toks, a, b, isSep) {
+  const out = [];
+  let depth = 0, start = a;
+  for (let k = a; k < b; k++) {
+    const t = toks[k];
+    if (t.t === 'op') {
+      if (t.v === '(' || t.v === '[' || t.v === '{') depth++;
+      else if (t.v === ')' || t.v === ']' || t.v === '}') depth--;
+    } else if (t.t === 'kw' && t.v === 'function') { k = matchBlock(toks, k); continue; }
+    if (depth === 0 && isSep(t)) { out.push([start, k]); start = k + 1; }
+  }
+  out.push([start, b]);
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Importer                                                            */
+/* ------------------------------------------------------------------ */
+function leadingComment(gap) {
+  const lines = gap.split('\n').map(l => l.trim()).filter(l => l.indexOf('--') === 0 && l.indexOf('--[') !== 0);
+  return lines.length ? lines[0].replace(/^-+\s*/, '').trim() : '';
+}
+function tidyGap(gap) { return gap.replace(/^[\s;]+/, '').trim(); }
+function lineStart(src, pos) { let k = pos; while (k > 0 && (src[k - 1] === ' ' || src[k - 1] === '\t')) k--; return k; }
+function stmtSrc(ctx, st) { const T = ctx.toks; return ctx.src.slice(lineStart(ctx.src, T[st.a].s), T[st.b - 1].e); }
+
+function parseTableEntries(ctx, i) {
+  const T = ctx.toks, c = closeIdx(T, i);
+  const ranges = splitTopLevel(T, i + 1, c, t => t.t === 'op' && (t.v === ',' || t.v === ';')).filter(r => r[1] > r[0]);
+  return ranges.map(([x, y]) => {
+    let key = null, a = x;
+    if (T[x].t === 'name' && T[x + 1] && T[x + 1].t === 'op' && T[x + 1].v === '=') { key = { src: T[x].v, str: T[x].v }; a = x + 2; }
+    else if (T[x].t === 'op' && T[x].v === '[') {
+      const cb = closeIdx(T, x);
+      if (T[cb + 1] && T[cb + 1].v === '=') {
+        const single = cb - x === 2 ? T[x + 1] : null;
+        key = { src: ctx.src.slice(T[x].s, T[cb].e), str: single && (single.t === 'str' || single.t === 'num') ? String(single.v) : null };
+        a = cb + 2;
+      }
+    }
+    return { key, a, b: y };
+  });
+}
+function entryKind(ctx, e) {
+  const T = ctx.toks;
+  if (e.b - e.a === 1 && T[e.a].t === 'str') return { k: 'str', v: T[e.a].v };
+  if (T[e.a].t === 'op' && T[e.a].v === '{' && closeIdx(T, e.a) === e.b - 1) return { k: 'table' };
+  return { k: 'raw' };
+}
+function entryRaw(ctx, e) { return ctx.src.slice(ctx.toks[e.a].s, ctx.toks[e.b - 1].e); }
+
+function parseItem(ctx, e) {
+  const kind = entryKind(ctx, e);
+  if (kind.k === 'str') return Object.assign(newItem(kind.v));
+  if (kind.k === 'table') {
+    const ents = parseTableEntries(ctx, e.a);
+    let name = null, ok = true, augPath = '';
+    const augs = [], extras = [];
+    ents.forEach(en => {
+      const ks = en.key && en.key.str, vv = entryKind(ctx, en);
+      if (ks === 'Name' && vv.k === 'str') name = vv.v;
+      else if (ks === 'AugPath' && vv.k === 'str') augPath = vv.v;
+      else if (ks === 'Augment') {
+        if (vv.k === 'str') augs.push(vv.v);
+        else if (vv.k === 'table') parseTableEntries(ctx, en.a).forEach(x => { const xv = entryKind(ctx, x); if (xv.k === 'str') augs.push(xv.v); else ok = false; });
+        else ok = false;
+      } else if (ks && /^[A-Za-z_]\w*$/.test(en.key.src)) extras.push({ k: en.key.src, raw: entryRaw(ctx, en) });
+      else ok = false;
+    });
+    if (name !== null && ok) return { name, augPath, augments: augs, extras, raw: null };
+  }
+  const it = newItem(''); it.raw = entryRaw(ctx, e);
+  ctx.notes.push({ line: ctx.toks[e.a].line, kind: 'item', text: 'A gear entry uses Lua that cannot be shown as a plain item. It is kept as written: ' + shorten(it.raw) });
+  return it;
+}
+function shorten(t) { t = String(t).replace(/\s+/g, ' ').trim(); return t.length > 70 ? t.slice(0, 67) + '...' : t; }
+
+function addSet(ctx, name, entries) {
+  const set = newSet(name);
+  entries.forEach(e => {
+    const ks = e.key && e.key.str;
+    if (ks && SLOTS.indexOf(ks) >= 0) set.slots[ks] = parseItem(ctx, e);
+    else {
+      set.extras.push({ k: e.key ? e.key.src : null, raw: entryRaw(ctx, e) });
+      ctx.notes.push({ line: ctx.toks[e.a].line, kind: 'setkey', text: 'Gear set "' + name + '" has an entry (' + (e.key ? e.key.src : 'unnamed') + ') that is not an equipment slot. It is kept as written.' });
+    }
+  });
+  const dup = ctx.sets.find(s => s.name === name);
+  if (dup) ctx.notes.push({ line: ctx.toks[entries.length ? entries[0].a : 0].line, kind: 'dup', text: 'The set "' + name + '" is defined more than once. The later definition replaces the earlier one.' });
+  ctx.sets = ctx.sets.filter(s => s.name !== name);
+  ctx.sets.push(set);
+}
+function buildSets(ctx, ti, prefix) {
+  const entries = parseTableEntries(ctx, ti);
+  const hasSlot = entries.some(e => e.key && e.key.str && SLOTS.indexOf(e.key.str) >= 0);
+  if (prefix && (hasSlot || entries.length === 0)) { addSet(ctx, prefix, entries); return; }
+  entries.forEach(e => {
+    const kind = entryKind(ctx, e);
+    if (e.key && e.key.str != null && kind.k === 'table') buildSets(ctx, e.a, prefix ? prefix + '.' + e.key.str : e.key.str);
+    else {
+      const path = (prefix ? prefix.split('.').map(s => isIdent(s) ? '.' + s : '[' + luaStr(s) + ']').join('') : '');
+      const keySrc = e.key ? (isIdent(e.key.str || '') ? '.' + e.key.str : '[' + luaStr(e.key.str || '') + ']') : '';
+      if (e.key) {
+        ctx.custom.push(ctx.setsVar + path + keySrc + ' = ' + entryRaw(ctx, e) + ';');
+        ctx.notes.push({ line: ctx.toks[e.a].line, kind: 'setexpr', text: 'The set "' + (e.key.str || '?') + '" is built with Lua code, so it is kept as custom Lua instead of a visual set.' });
+      }
+    }
+  });
+}
+
+function parseSetRef(ctx, a, b) {
+  const T = ctx.toks;
+  if (b - a === 1 && T[a].t === 'str') return T[a].v;
+  if (T[a] && T[a].t === 'name' && T[a].v === ctx.setsVar) {
+    const segs = []; let i = a + 1;
+    while (i < b) {
+      if (T[i].v === '.' && T[i + 1] && T[i + 1].t === 'name') { segs.push(T[i + 1].v); i += 2; }
+      else if (T[i].v === '[' && T[i + 1] && T[i + 1].t === 'str' && T[i + 2] && T[i + 2].v === ']') { segs.push(T[i + 1].v); i += 3; }
+      else return null;
+    }
+    return segs.length ? segs.join('.') : null;
+  }
+  return null;
+}
+
+function parseSimpleAction(ctx, st) {
+  const T = ctx.toks;
+  let a = st.a, e = st.b;
+  if (T[e - 1].v === ';') e--;
+  const v = i => T[i] && T[i].v;
+  if (v(a) === 'gFunc' && v(a + 1) === '.' && v(a + 3) === '(' && v(e - 1) === ')' && closeIdx(T, a + 3) === e - 1) {
+    const fn = v(a + 2);
+    if (fn === 'EquipSet') { const name = parseSetRef(ctx, a + 4, e - 1); if (name) return { type: 'equipSet', setId: '', setName: name }; }
+    if (fn === 'Equip' && e - a === 8 && T[a + 4].t === 'str' && v(a + 5) === ',' && T[a + 6].t === 'str') return { type: 'equipItem', slot: T[a + 4].v, item: T[a + 6].v };
+    if (fn === 'Message' && e - a === 6 && T[a + 4].t === 'str') return { type: 'message', text: T[a + 4].v };
+  }
+  return null;
+}
+function parseActions(ctx, a, b) {
+  const T = ctx.toks, out = [];
+  let prevEnd = a > 0 ? T[a - 1].e : 0;
+  splitStatements(T, a, b).forEach(st => {
+    const gap = tidyGap(ctx.src.slice(prevEnd, T[st.a].s));
+    prevEnd = T[st.b - 1].e;
+    const act = parseSimpleAction(ctx, st);
+    if (act) { out.push(act); return; }
+    const code = dedent((gap && gap.indexOf('--') === 0 ? gap + '\n' : '') + stmtSrc(ctx, st));
+    out.push({ type: 'rawLua', code });
+    ctx.notes.push({ line: T[st.a].line, kind: 'action', text: 'Custom Lua inside a rule is kept as written: ' + shorten(code) });
+  });
+  return out;
+}
+
+function parseIf(ctx, i) {
+  const T = ctx.toks, endIdx = matchBlock(T, i);
+  const clauses = [];
+  let depth = 0, k = i + 1, cur = null, condStart = i + 1;
+  while (k < endIdx) {
+    const t = T[k];
+    if (t.t === 'kw') {
+      if (t.v === 'function' || t.v === 'if' || t.v === 'do' || t.v === 'repeat') depth++;
+      else if (t.v === 'end' || t.v === 'until') depth--;
+      else if (depth === 0 && t.v === 'then' && cur === null) cur = { condA: condStart, condB: k, bodyA: k + 1, bodyB: null };
+      else if (depth === 0 && (t.v === 'elseif' || t.v === 'else')) {
+        if (cur) { cur.bodyB = k; clauses.push(cur); }
+        if (t.v === 'elseif') { condStart = k + 1; cur = null; }
+        else cur = { condA: null, condB: null, bodyA: k + 1, bodyB: null };
+      }
+    }
+    k++;
+  }
+  if (cur) { cur.bodyB = endIdx; clauses.push(cur); }
+  return clauses;
+}
+
+const CMP = new Set(['==', '~=', '<', '<=', '>', '>=']);
+function srcOfAlias(ctx, name) { return Object.keys(ctx.names).find(k => ctx.names[k] === name); }
+
+function matchLeaf(ctx, a, b) {
+  const tk = ctx.toks.slice(a, b), n = tk.length;
+  const L = (i, v) => tk[i] && tk[i].v === v;
+  if (n === 5 && tk[0].t === 'name' && L(1, '.') && tk[2].t === 'name' && CMP.has(tk[3].v)) {
+    const s = srcOfAlias(ctx, tk[0].v);
+    const kind = s && FIELD_KIND[s + '.' + tk[2].v];
+    const spec = kind && CONDS[kind], lit = tk[4];
+    if (spec) {
+      if (spec.type === 'num' && lit.t === 'num') return { kind, op: tk[3].v, value: Number(lit.v) };
+      if ((spec.type === 'enum' || spec.type === 'text' || spec.type === 'name') && lit.t === 'str' && (tk[3].v === '==' || tk[3].v === '~=')) return { kind, op: tk[3].v, value: lit.v };
+    }
+    if (s === 'player' && tk[2].v === 'IsMoving' && lit.t === 'kw' && (lit.v === 'true' || lit.v === 'false') && (tk[3].v === '==' || tk[3].v === '~='))
+      return { kind: 'player.moving', op: (lit.v === 'true') === (tk[3].v === '==') ? 'true' : 'false', value: 'true' };
+  }
+  if (n === 3 && tk[0].t === 'name' && L(1, '.') && L(2, 'IsMoving') && srcOfAlias(ctx, tk[0].v) === 'player') return { kind: 'player.moving', op: 'true', value: 'true' };
+  if (n === 4 && L(0, 'not') && tk[1].t === 'name' && L(2, '.') && L(3, 'IsMoving') && srcOfAlias(ctx, tk[1].v) === 'player') return { kind: 'player.moving', op: 'false', value: 'true' };
+  if (n === 8 && L(0, 'gData') && L(2, 'GetBuffCount') && L(3, '(') && tk[4].t === 'str' && L(5, ')') && CMP.has(tk[6].v) && tk[7].t === 'num') {
+    const op = tk[6].v, num = Number(tk[7].v);
+    if ((op === '>' && num === 0) || (op === '>=' && num === 1) || (op === '~=' && num === 0)) return { kind: 'buff', op: 'active', value: tk[4].v };
+    if ((op === '==' && num === 0) || (op === '<' && num === 1)) return { kind: 'buff', op: 'inactive', value: tk[4].v };
+  }
+  if (n === 7 && L(0, 'gData') && L(2, 'GetPet') && L(3, '(') && L(4, ')') && (L(5, '==') || L(5, '~=')) && L(6, 'nil')) return { kind: 'pet', op: L(5, '~=') ? 'has' : 'none', value: '' };
+  if (n >= 10 && L(0, 'string') && L(1, '.') && (L(2, 'find') || L(2, 'match')) && L(3, '(') && tk[4].t === 'name' && srcOfAlias(ctx, tk[4].v) === 'action' && L(5, '.') && L(6, 'Name') && L(7, ',') && tk[8].t === 'str') {
+    let i = 9, plain = false;
+    if (L(i, ',') && tk[i + 1] && tk[i + 1].v === '1' && L(i + 2, ',') && L(i + 3, 'true')) { plain = true; i += 4; }
+    if (L(i, ')')) {
+      i++;
+      const rest = tk.slice(i).map(t => t.v).join(' ');
+      if ((rest === '' || rest === '~= nil') && (plain || !/[\^$()%.\[\]*+\-?]/.test(tk[8].v))) return { kind: 'action.name', op: 'contains', value: tk[8].v };
+    }
+  }
+  return null;
+}
+
+function condTree(ctx, a, b) {
+  const T = ctx.toks;
+  function strip(x, y) {
+    while (y - x >= 2 && T[x].t === 'op' && T[x].v === '(' && closeIdx(T, x) === y - 1) { x++; y--; }
+    return [x, y];
+  }
+  function parse(x, y) {
+    [x, y] = strip(x, y);
+    let parts = splitTopLevel(T, x, y, t => t.t === 'kw' && t.v === 'or');
+    if (parts.length > 1) return { op: 'OR', children: parts.map(p => parse(p[0], p[1])) };
+    parts = splitTopLevel(T, x, y, t => t.t === 'kw' && t.v === 'and');
+    if (parts.length > 1) return { op: 'AND', children: parts.map(p => parse(p[0], p[1])) };
+    const leaf = matchLeaf(ctx, x, y);
+    if (leaf) return leaf;
+    const expr = ctx.src.slice(T[x].s, T[y - 1].e);
+    ctx.notes.push({ line: T[x].line, kind: 'cond', text: 'The check "' + shorten(expr) + '" cannot be built from the visual options, so it is kept as a custom Lua check.' });
+    return { kind: 'raw', op: '', value: '', expr };
+  }
+  const node = parse(a, b);
+  return isGroup(node) ? node : { op: 'AND', children: [node] };
+}
+
+function importLua(src, opts) {
+  opts = opts || {};
+  src = String(src).replace(/^﻿/, '');
+  const toks = lex(src);
+  const ctx = { src, toks, sets: [], custom: [], notes: [], setsVar: 'sets', names: { player: 'player', action: 'action', environment: 'environment' }, handlers: {}, settings: { allowAddSet: true, addSetBackup: true } };
+
+  const m = /profile\s*\.\s*Sets\s*=\s*([A-Za-z_]\w*)/.exec(src);
+  if (m) ctx.setsVar = m[1];
+  for (let i = 0; i + 8 < toks.length; i++) {
+    if (toks[i].v === 'local' && toks[i + 1].t === 'name' && toks[i + 2].v === '=' && toks[i + 3].v === 'gData' && toks[i + 4].v === '.' && toks[i + 6].v === '(' && toks[i + 7].v === ')') {
+      const f = toks[i + 5].v, nm = toks[i + 1].v;
+      if (f === 'GetPlayer' && ctx.names.player === 'player') ctx.names.player = nm;
+      if (f === 'GetAction' && ctx.names.action === 'action') ctx.names.action = nm;
+      if (f === 'GetEnvironment' && ctx.names.environment === 'environment') ctx.names.environment = nm;
+    }
+  }
+
+  const T = toks;
+  let prevEnd = 0;
+  splitStatements(T, 0, T.length).forEach(st => {
+    const a = st.a;
+    let e = st.b; if (T[e - 1].v === ';') e--;
+    const v = i => T[i] && T[i].v;
+    const gap = tidyGap(src.slice(prevEnd, T[a].s));
+    prevEnd = T[st.b - 1].e;
+    let used = false;
+    if (v(a) === 'local' && v(a + 1) === 'profile' && v(a + 2) === '=' && v(a + 3) === '{' && closeIdx(T, a + 3) === e - 1) used = true;
+    else if (v(a) === 'return' && v(a + 1) === 'profile' && e === a + 2) used = true;
+    else if (v(a) === 'profile' && v(a + 1) === '.' && v(a + 2) === 'Packer' && v(a + 3) === '=' && v(a + 4) === '{' && v(a + 5) === '}' && e === a + 6) used = true;
+    else if (v(a) === 'profile' && v(a + 1) === '.' && v(a + 2) === 'Sets' && v(a + 3) === '=') {
+      if (e === a + 5 && T[a + 4].t === 'name') used = true;
+      else if (v(a + 4) === '{' && closeIdx(T, a + 4) === e - 1) { buildSets(ctx, a + 4, ''); used = true; }
+    } else if ((v(a) === 'local' && v(a + 1) === ctx.setsVar && v(a + 2) === '=' && v(a + 3) === '{' && closeIdx(T, a + 3) === e - 1)) { buildSets(ctx, a + 3, ''); used = true; }
+    else if (v(a) === ctx.setsVar && v(a + 1) === '=' && v(a + 2) === '{' && closeIdx(T, a + 2) === e - 1) { buildSets(ctx, a + 2, ''); used = true; }
+    else if (v(a) === ctx.setsVar && (v(a + 1) === '.' || v(a + 1) === '[')) {
+      const segs = []; let i = a + 1;
+      for (;;) {
+        if (v(i) === '.' && T[i + 1] && T[i + 1].t === 'name') { segs.push(T[i + 1].v); i += 2; }
+        else if (v(i) === '[' && T[i + 1] && T[i + 1].t === 'str' && v(i + 2) === ']') { segs.push(T[i + 1].v); i += 3; }
+        else break;
+      }
+      if (segs.length && v(i) === '=' && v(i + 1) === '{' && closeIdx(T, i + 1) === e - 1) { buildSets(ctx, i + 1, segs.join('.')); used = true; }
+    }
+    if (!used) {
+      let fnIdx = -1;
+      if (v(a) === 'profile' && v(a + 1) === '.' && ALL_HANDLER_NAMES.has(v(a + 2)) && v(a + 3) === '=' && v(a + 4) === 'function') fnIdx = a + 4;
+      let name = fnIdx >= 0 ? v(a + 2) : null, paren = fnIdx + 1;
+      if (v(a) === 'function' && v(a + 1) === 'profile' && v(a + 2) === '.' && ALL_HANDLER_NAMES.has(v(a + 3))) { fnIdx = a; name = v(a + 3); paren = a + 4; }
+      if (fnIdx >= 0 && v(paren) === '(') {
+        const pc = closeIdx(T, paren), endIdx = matchBlock(T, fnIdx);
+        if (!ctx.handlers[name]) { ctx.handlers[name] = { a: pc + 1, b: endIdx, line: T[a].line }; used = true; }
+        else ctx.notes.push({ line: T[a].line, kind: 'dup', text: 'The handler ' + name + ' is defined twice. The second one is kept as custom Lua.' });
+      }
+    }
+    if (!used) ctx.custom.push((gap && gap.indexOf('--') === 0 ? gap + '\n' : '') + stmtSrc(ctx, st));
+  });
+
+  // Raw-body handlers
+  const raw = { custom: ctx.custom.join('\n\n').replace(/^-- Custom Lua kept from the imported profile\n?/gm, '').trim(), OnLoad: '', OnUnload: '', HandleCommand: '' };
+  RAW_HANDLERS.forEach(h => {
+    const hd = ctx.handlers[h];
+    if (!hd) return;
+    const chunks = [];
+    let pe = hd.a > 0 ? T[hd.a - 1].e : 0;
+    splitStatements(T, hd.a, hd.b).forEach(st => {
+      const gap = tidyGap(src.slice(pe, T[st.a].s));
+      pe = T[st.b - 1].e;
+      let e = st.b; if (T[e - 1].v === ';') e--;
+      const v = i => T[i] && T[i].v;
+      if (h === 'OnLoad' && v(st.a) === 'gSettings' && v(st.a + 1) === '.' && v(st.a + 3) === '=' && e - st.a === 5 && (v(st.a + 4) === 'true' || v(st.a + 4) === 'false')) {
+        if (v(st.a + 2) === 'AllowAddSet') { ctx.settings.allowAddSet = v(st.a + 4) === 'true'; return; }
+        if (v(st.a + 2) === 'AddSetBackup') { ctx.settings.addSetBackup = v(st.a + 4) === 'true'; return; }
+      }
+      chunks.push((gap && gap.indexOf('--') === 0 ? gap + '\n' : '') + stmtSrc(ctx, st));
+    });
+    raw[h] = chunks.join('\n');
+    if (raw[h].trim() && h === 'HandleCommand') ctx.notes.push({ line: hd.line, kind: 'cmd', text: 'HandleCommand is kept as custom Lua. Commands added in Gear Studio are appended after it.' });
+  });
+
+  // Rule handlers
+  const rules = [];
+  GEN_ORDER.forEach(h => {
+    const hd = ctx.handlers[h];
+    if (!hd) return;
+    let pending = null;
+    const flush = () => {
+      if (!pending) return;
+      const r = newRule(h); r.name = pending.name; r.actions = pending.acts; rules.push(r); pending = null;
+    };
+    let pe = hd.a > 0 ? T[hd.a - 1].e : 0;
+    splitStatements(T, hd.a, hd.b).forEach(st => {
+      const gap = tidyGap(src.slice(pe, T[st.a].s));
+      pe = T[st.b - 1].e;
+      const comment = leadingComment(gap);
+      let e = st.b; if (T[e - 1].v === ';') e--;
+      const v = i => T[i] && T[i].v;
+      if (v(st.a) === 'local' && T[st.a + 1] && T[st.a + 1].t === 'name' && v(st.a + 2) === '=' && v(st.a + 3) === 'gData' && v(st.a + 4) === '.' &&
+          ['GetPlayer', 'GetAction', 'GetEnvironment'].indexOf(v(st.a + 5)) >= 0 && e - st.a === 8) return;
+      if (T[st.a].t === 'kw' && T[st.a].v === 'if') {
+        flush();
+        parseIf(ctx, st.a).forEach((cl, idx) => {
+          const r = newRule(h);
+          r.name = idx === 0 ? comment : '';
+          r.exclusive = idx > 0;
+          r.when = cl.condA === null ? emptyGroup('AND') : condTree(ctx, cl.condA, cl.condB);
+          r.actions = parseActions(ctx, cl.bodyA, cl.bodyB);
+          rules.push(r);
+        });
+        return;
+      }
+      const act = parseSimpleAction(ctx, st);
+      if (act) { if (!pending) pending = { name: comment, acts: [] }; pending.acts.push(act); return; }
+      flush();
+      const code = dedent((gap && gap.indexOf('--') === 0 ? gap + '\n' : '') + stmtSrc(ctx, st));
+      rules.push(newRawRule(h, code));
+      ctx.notes.push({ line: T[st.a].line, kind: 'raw', handler: h, text: 'A statement in ' + h + ' is not an if-rule or a simple equip call, so it is kept as a custom Lua block: ' + shorten(code) });
+    });
+    flush();
+  });
+
+  // Resolve set references by name
+  const profile = newProfile(opts.name || opts.job || 'Imported', opts.job || '');
+  profile.sets = ctx.sets;
+  rules.forEach(r => (r.actions || []).forEach(a => {
+    if (a.type === 'equipSet') { const s = findSet(profile, a.setName); if (s) a.setId = s.id; }
+  }));
+  profile.rules = rules;
+  profile.names = ctx.names;
+  profile.settings = ctx.settings;
+  profile.raw = raw;
+  const handlersFound = Object.keys(ctx.handlers);
+  profile.importReport = {
+    at: Date.now(), fileName: opts.fileName || '',
+    sets: ctx.sets.length,
+    rules: rules.filter(r => r.kind === 'rule').length,
+    rawBlocks: rules.filter(r => r.kind === 'raw').length,
+    customLines: (raw.custom || '').split('\n').filter(l => l.trim()).length,
+    handlers: handlersFound,
+    notes: ctx.notes.slice(0, 200),
+    noteCount: ctx.notes.length,
+  };
+  return profile;
+}
+
+/* ------------------------------------------------------------------ */
+/* Validation                                                          */
+/* ------------------------------------------------------------------ */
+function balanced(code) {
+  try {
+    const toks = lex(code);
+    let depth = 0, br = 0;
+    toks.forEach(t => {
+      if (t.t === 'kw') {
+        if (t.v === 'function' || t.v === 'if' || t.v === 'do' || t.v === 'repeat') depth++;
+        else if (t.v === 'end' || t.v === 'until') depth--;
+      } else if (t.t === 'op') {
+        if (t.v === '(' || t.v === '[' || t.v === '{') br++;
+        else if (t.v === ')' || t.v === ']' || t.v === '}') br--;
+      }
+    });
+    if (depth > 0) return "is missing " + depth + " 'end'";
+    if (depth < 0) return "has " + (-depth) + " extra 'end'";
+    if (br !== 0) return 'has unmatched brackets';
+    return '';
+  } catch (e) { return e.message; }
+}
+
+function validate(profile) {
+  const issues = [];
+  const add = (sev, title, detail, ref) => issues.push({ sev, title, detail, ref: ref || {} });
+  const customDefines = name => new RegExp('sets\\s*(\\.|\\[)\\s*[\'"]?' + String(name).split('.').join('[\'"\\]\\.\\[\\s]*').replace(/[^\w\\'"\]\.\[\s*]/g, '') ).test(profile.raw.custom || '');
+
+  if (!profile.sets.length) add('warn', 'This profile has no gear sets yet', 'Rules can only equip sets that exist. Create a set on the Gear Sets tab first.', { tab: 'sets' });
+
+  const seen = {};
+  profile.sets.forEach(s => {
+    const key = s.name.toLowerCase();
+    if (!s.name.trim()) add('error', 'A gear set has no name', 'Give it a name so rules can refer to it.', { tab: 'sets', setId: s.id });
+    if (seen[key]) add('error', 'Two gear sets are both called "' + s.name + '"', 'LuAshitacast matches set names without caring about upper or lower case, so the second one would never be found. Rename one.', { tab: 'sets', setId: s.id });
+    seen[key] = true;
+    if (s.name && !s.name.split('.').every(isIdent)) add('info', '"' + s.name + '" contains characters Lua treats specially', 'It still works, because Gear Studio writes it as sets["' + s.name + '"], but plain letters, numbers and underscores keep the file easier to read.', { tab: 'sets', setId: s.id });
+    const filled = SLOTS.filter(sl => itemExpr(s.slots[sl]));
+    if (!filled.length) add('warn', 'The set "' + s.name + '" is empty', 'An empty set equips nothing. Pick at least one item for it, or remove it if you do not need it.', { tab: 'sets', setId: s.id });
+    ['Ring', 'Ear'].forEach(p => {
+      const a = s.slots[p + '1'], b = s.slots[p + '2'];
+      if (a && b && !a.raw && !b.raw && a.name && a.name.toLowerCase() === b.name.toLowerCase() && !(a.augments.length || b.augments.length))
+        add('warn', 'The set "' + s.name + '" uses ' + a.name + ' in both ' + p + ' slots', 'You can only wear the same item twice if you own two copies. If you only have one, the second slot will stay empty.', { tab: 'sets', setId: s.id });
+    });
+    const main = s.slots.Main, sub = s.slots.Sub;
+    if (main && sub && main.name && sub.name && main.name === sub.name) add('info', 'The set "' + s.name + '" puts ' + main.name + ' in both Main and Sub', 'That only works for a dual wield with two copies of the weapon.', { tab: 'sets', setId: s.id });
+  });
+
+  const usedSets = new Set();
+  const names = {};
+  profile.variables.forEach(v => {
+    if (!isIdent(v.name)) add('error', 'The variable name "' + v.name + '" is not valid', 'Variable names must start with a letter or underscore and use only letters, numbers and underscores, and cannot be a Lua keyword such as "end".', { tab: 'profile' });
+    if (names[v.name]) add('error', 'The variable "' + v.name + '" is defined twice', 'Each variable needs its own name.', { tab: 'profile' });
+    names[v.name] = true;
+    if (!v.options.length) add('error', 'The variable "' + v.name + '" has no options', 'Add at least one option, for example Normal, Acc.', { tab: 'profile' });
+  });
+
+  profile.rules.forEach((r, idx) => {
+    const h = HANDLERS.find(x => x.id === r.handler);
+    const where = { tab: 'rules', handler: r.handler, ruleId: r.id };
+    const label = '"' + ruleTitle(r, profile) + '" in ' + (h ? h.label : r.handler);
+    if (r.kind === 'raw') {
+      const p = balanced(r.code || '');
+      if (p) add('warn', 'A custom Lua block in ' + (h ? h.label : r.handler) + ' ' + p, 'Check the code for a missing "end" or bracket. The generated file would not load until this is fixed.', where);
+      return;
+    }
+    const siblings = profile.rules.filter(x => x.handler === r.handler);
+    const pos = siblings.indexOf(r);
+    if (r.exclusive && pos === 0) add('info', 'The rule ' + label + ' is marked "Otherwise" but has no rule above it', 'It will behave like a normal rule.', where);
+    if (r.exclusive && pos > 0 && siblings[pos - 1].kind === 'rule' && !groupExpr(siblings[pos - 1].when, profile, profile.names, true) && !siblings[pos - 1].exclusive)
+      add('warn', 'The rule ' + label + ' can never be reached', 'The rule above it always applies, so an "Otherwise" rule below it never runs. Add a condition to the rule above or remove the Otherwise setting.', where);
+    if (pos > 0 && r.exclusive) {
+      let k = pos - 1;
+      while (k >= 0 && siblings[k].kind === 'rule' && siblings[k].exclusive && siblings[k].enabled) {
+        if (!groupExpr(siblings[k].when, profile, profile.names, true)) { add('warn', 'The rule ' + label + ' comes after an "Otherwise" rule with no condition', 'That rule always applies when reached, so this one can never run.', where); break; }
+        k--;
+      }
+    }
+    if (!r.actions.length) add('warn', 'The rule ' + label + ' does nothing', 'Add an action such as "Equip a gear set".', where);
+    if (!(r.name || '').trim() && !groupExpr(r.when, profile, profile.names, true) && !r.exclusive && r.actions.length)
+      void 0;
+    (function walk(g) {
+      (g.children || []).forEach(c => {
+        if (isGroup(c)) { if (!c.children.length) add('info', 'The rule ' + label + ' has an empty condition group', 'Empty groups are ignored. Add a condition to it or remove it.', where); walk(c); return; }
+        const spec = CONDS[c.kind];
+        if (!spec) { add('error', 'The rule ' + label + ' has an unknown condition', 'Remove it and add the condition again.', where); return; }
+        if (spec.needsAction && h && !h.action) add('error', 'The rule ' + label + ' checks the action, but there is no action here', 'In the Default handler LuAshitacast has no current action, so this check would cause an error in game. Move the rule to Precast, Midcast, Ability, Weaponskill, Item, Preshot or Midshot.', where);
+        else if (spec.spellOnly && h && !h.spell) add('warn', 'The rule ' + label + ' checks a spell detail outside of a spell', 'Skill, element, type and MP cost only exist for spells. In ' + h.label + ' this check is never true.', where);
+        if ((spec.type === 'enum' || spec.type === 'text' || spec.type === 'name' || spec.type === 'buff') && !String(c.value || '').trim()) add('warn', 'The rule ' + label + ' has a condition with no value', 'Fill in the value, otherwise the condition can never match.', where);
+        if (spec.type === 'var') {
+          const v = findVar(profile, c.varId);
+          if (!v) add('error', 'The rule ' + label + ' refers to a variable that does not exist', 'Pick a variable on the Profile tab or remove this condition.', where);
+          else if (v.options.length && v.options.indexOf(c.value) < 0) add('warn', 'The rule ' + label + ' compares ' + v.name + ' with "' + c.value + '"', 'That is not one of its options (' + v.options.join(', ') + ').', where);
+        }
+        if (spec.type === 'raw') {
+          if (!(c.expr || '').trim()) add('warn', 'The rule ' + label + ' has an empty custom check', 'Enter a Lua expression or remove it.', where);
+          else { const p = balanced(c.expr); if (p) add('warn', 'A custom check in ' + label + ' ' + p, 'Check the expression.', where); }
+        }
+      });
+    })(r.when);
+    r.actions.forEach(a => {
+      if (a.type === 'equipSet') {
+        const s = findSet(profile, a.setId);
+        if (s) usedSets.add(s.id);
+        else if (a.setName && customDefines(a.setName)) { /* defined in custom Lua */ }
+        else add('error', 'The rule ' + label + ' equips a set that does not exist' + (a.setName ? ' ("' + a.setName + '")' : ''), 'The set may have been deleted or renamed. Choose another set in the rule, or create it on the Gear Sets tab.', where);
+      } else if (a.type === 'equipSetVar') {
+        const v = findVar(profile, a.varId);
+        if (!v) add('error', 'The rule ' + label + ' uses a variable that does not exist', 'Choose a variable on the Profile tab first.', where);
+        else v.options.forEach(o => {
+          const s = findSet(profile, (a.prefix || '') + o);
+          if (s) usedSets.add(s.id); else add('error', 'No gear set called "' + (a.prefix || '') + o + '"', 'The rule ' + label + ' builds a set name from the variable ' + v.name + ' (' + (a.prefix || '') + o + '), but that set is missing. Create it or remove the option.', where);
+        });
+      } else if (a.type === 'equipItem') {
+        if (SLOTS.indexOf(a.slot) < 0) add('error', 'The rule ' + label + ' uses an unknown slot', 'Slots are ' + SLOTS.join(', ') + '.', where);
+        if (!(a.item || '').trim()) add('warn', 'The rule ' + label + ' equips no item', 'Type an item name.', where);
+      } else if (a.type === 'setVar') {
+        if (!findVar(profile, a.varId)) add('error', 'The rule ' + label + ' changes a variable that does not exist', 'Pick a variable on the Profile tab.', where);
+      } else if (a.type === 'rawLua') {
+        const p = balanced(a.code || '');
+        if (p) add('warn', 'Custom Lua in ' + label + ' ' + p, 'The generated file would not load until this is fixed.', where);
+      }
+    });
+  });
+
+  const cn = {};
+  profile.commands.forEach(c => {
+    const nm = (c.name || '').trim().toLowerCase();
+    if (!nm) { add('warn', 'A command has no name', 'Type the word you will use after /lac fwd.', { tab: 'profile' }); return; }
+    if (/\s/.test(nm)) add('error', 'The command "' + c.name + '" contains a space', 'Commands are a single word, used like /lac fwd ' + nm.split(/\s+/)[0] + '.', { tab: 'profile' });
+    if (cn[nm]) add('error', 'The command "' + nm + '" is defined twice', 'Only the first one would run.', { tab: 'profile' });
+    cn[nm] = true;
+    if ((c.kind === 'cycle' || c.kind === 'set') && !findVar(profile, c.varId)) add('error', 'The command "' + nm + '" needs a variable', 'Choose which variable it changes.', { tab: 'profile' });
+    if (c.kind === 'lock') { const s = findSet(profile, c.setId); if (!s) add('error', 'The command "' + nm + '" locks a set that does not exist', 'Choose a set.', { tab: 'profile' }); else usedSets.add(s.id); }
+    if (c.kind === 'raw') { const p = balanced(c.code || ''); if (p) add('warn', 'The command "' + nm + '" ' + p, 'Check the Lua.', { tab: 'profile' }); }
+  });
+
+  ['custom', 'OnLoad', 'OnUnload', 'HandleCommand'].forEach(k => {
+    const code = profile.raw[k] || '';
+    if (!code.trim()) return;
+    const p = balanced(code);
+    if (p) add('warn', 'The custom Lua section "' + k + '" ' + p, 'The generated file would not load until this is fixed.', { tab: 'profile' });
+  });
+  const dupHandlers = GEN_ORDER.filter(h => new RegExp('profile\\s*\\.\\s*' + h + '\\s*=').test(profile.raw.custom || ''));
+  dupHandlers.forEach(h => add('warn', 'Custom Lua also defines ' + h, 'Gear Studio generates this handler too, and the generated one is written last, so it wins.', { tab: 'profile' }));
+
+  profile.sets.forEach(s => { if (!usedSets.has(s.id)) add('info', 'The set "' + s.name + '" is not used by any rule', 'It is still written to the file. You can equip it in game with /lac set ' + s.name + '.', { tab: 'sets', setId: s.id }); });
+
+  const rank = { error: 0, warn: 1, info: 2 };
+  issues.sort((a, b) => rank[a.sev] - rank[b.sev]);
+  return issues;
+}
+
+/* ------------------------------------------------------------------ */
+/* Project (de)serialisation                                           */
+/* ------------------------------------------------------------------ */
+function normaliseProject(p) {
+  if (!p || !Array.isArray(p.profiles)) throw new Error('This file is not an Ashita Gear Studio project (no profiles found).');
+  const out = { schema: 1, name: String(p.name || 'My Gear Project'), profiles: [] };
+  p.profiles.forEach(src => {
+    const pr = newProfile(src.name, src.job);
+    Object.assign(pr, clone(src));
+    pr.settings = Object.assign({ allowAddSet: true, addSetBackup: true }, src.settings || {});
+    pr.names = Object.assign({ player: 'player', action: 'action', environment: 'environment' }, src.names || {});
+    pr.raw = Object.assign({ custom: '', OnLoad: '', OnUnload: '', HandleCommand: '' }, src.raw || {});
+    pr.sets = pr.sets || []; pr.variables = pr.variables || []; pr.rules = pr.rules || []; pr.commands = pr.commands || [];
+    pr.sets.forEach(s => { s.slots = s.slots || {}; s.extras = s.extras || []; s.note = s.note || ''; });
+    out.profiles.push(pr);
+  });
+  if (!out.profiles.length) out.profiles.push(newProfile('Profile', ''));
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Syntax highlighting for the preview                                 */
+/* ------------------------------------------------------------------ */
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function highlightLua(src) {
+  let out = '', i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    if (c === '-' && src[i + 1] === '-') {
+      let j = i;
+      const lv = longLevel(src, i + 2);
+      if (lv >= 0) j = longEnd(src, i + 2 + lv + 2, lv); else { while (j < n && src[j] !== '\n') j++; }
+      out += '<span class="lc">' + esc(src.slice(i, j)) + '</span>'; i = j; continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < n && src[j] !== c && src[j] !== '\n') { if (src[j] === '\\') j++; j++; }
+      j = Math.min(n, j + 1);
+      out += '<span class="ls">' + esc(src.slice(i, j)) + '</span>'; i = j; continue;
+    }
+    if (/[0-9]/.test(c)) { const m = /^\d+\.?\d*/.exec(src.slice(i, i + 30)); out += '<span class="ln">' + m[0] + '</span>'; i += m[0].length; continue; }
+    if (/[A-Za-z_]/.test(c)) {
+      const m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(src.slice(i, i + 80))[0];
+      let cls = '';
+      if (LUA_KEYWORDS.has(m)) cls = (m === 'true' || m === 'false' || m === 'nil') ? 'll' : 'lk';
+      else if (m === 'gFunc' || m === 'gData' || m === 'gSettings') cls = 'la';
+      else if (src[i - 1] === '.' && /^\s*[({'"]/.test(src.slice(i + m.length, i + m.length + 3)) && /^\s*\(/.test(src.slice(i + m.length, i + m.length + 3))) cls = 'lf';
+      out += cls ? '<span class="' + cls + '">' + m + '</span>' : m; i += m.length; continue;
+    }
+    out += esc(c); i++;
+  }
+  return out;
+}
+
+root.Core = {
+  SLOTS, HANDLERS, GEN_ORDER, ELEMENTS, JOB_ABBRS, CONDS, ACTION_TYPES, NUM_OPS, EQ_OPS, STATUSES, SPELL_SKILLS,
+  uid, isIdent, luaStr, setPath, dedent, clone, emptyGroup, isGroup,
+  newSet, newItem, newCond, newRule, newRawRule, newAction, newProfile, findSet, findVar,
+  generateLua, itemExpr, describeRule, describeCond, describeGroup, describeAction, ruleTitle,
+  lex, importLua, validate, normaliseProject, highlightLua, LuaSyntaxError, balanced,
+};
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Static reference data and starter templates. In the full build these become JSON files. */
+(function (root) {
+'use strict';
+const C = root.Core;
+
+const JOBS = [
+  ['WAR','Warrior','melee'],['MNK','Monk','melee'],['WHM','White Mage','caster'],['BLM','Black Mage','caster'],
+  ['RDM','Red Mage','hybrid'],['THF','Thief','melee'],['PLD','Paladin','hybrid'],['DRK','Dark Knight','hybrid'],
+  ['BST','Beastmaster','melee'],['BRD','Bard','caster'],['RNG','Ranger','melee'],['SAM','Samurai','melee'],
+  ['NIN','Ninja','hybrid'],['DRG','Dragoon','melee'],['SMN','Summoner','caster'],['BLU','Blue Mage','hybrid'],
+  ['COR','Corsair','hybrid'],['PUP','Puppetmaster','melee'],['DNC','Dancer','melee'],['SCH','Scholar','caster'],
+  ['GEO','Geomancer','caster'],['RUN','Rune Fencer','hybrid'],
+];
+
+/* Sample list only. Any item name can be typed in the picker. */
+const WEAPONS = ['Excalibur','Joyeuse','Ragnarok','Apocalypse','Maneater','Mandau','Kikoku','Kraken Club','Yagrush','Chatoyant Staff',"Pluto's Staff","Terra's Staff",'Dark Staff','Light Staff','Fire Staff'];
+const OFFHAND = ["Genbu's Shield",'Aegis','Ochain','Mighty Strap'];
+const GEAR = {
+  Main: WEAPONS,
+  Sub: OFFHAND.concat(['Mandau','Kikoku','Kraken Club','Maneater','Excalibur']),
+  Range: ['Gjallarhorn','Ullr','Annihilator','Cornette'],
+  Ammo: ['Tulfaire Arrow','Bronze Bolt','Orichalcum Bullet','Silver Bullet','Happy Egg'],
+  Head: ['Optical Hat','Walahra Turban','Gavialis Helm','Homam Zucchetto','Hecatomb Cap',"Duelist's Chapeau",'Goliard Chapeau'],
+  Neck: ['Spike Necklace','Justice Torque','Love Torque','Peacock Amulet','Uggalepih Pendant','Parade Gorget'],
+  Ear: ['Brutal Earring','Suppanomimi','Loquac. Earring','Moonshade Earring',"Merman's Earring",'Cassie Earring','Ethereal Earring','Magnetic Earring','Static Earring','Novio Earring'],
+  Body: ['Scorpion Harness','Dusk Jerkin',"Kirin's Osode",'Black Cotehardie','Vermillion Cloak','Errant Houppelande','Shura Togi','Askar Korazin',"Warlock's Tabard","Duelist's Tabard"],
+  Hands: ['Dusk Gloves','Bokwus Gloves','Mochizuki Tekko','Rawhide Gloves','Leather Gloves',"Warlock's Gloves","Duelist's Gloves",'Garrison Gloves'],
+  Ring: ['Rajas Ring','Flame Ring','Defending Ring',"Balrahn's Ring",'Tamas Ring','Vivian Ring','Prolix Ring','Kunaji Ring',"Ulthalam's Ring","Sirona's Ring",'Serket Ring',"Toreador's Ring","Evoker's Ring",'Rahab Ring','Jelly Ring','Sheltered Ring'],
+  Back: ["Forager's Mantle","Cuchulain's Mantle",'Prism Cape','Amemet Mantle','Veela Cape','Shadow Mantle',"Rudianos's Mantle","Boxer's Mantle",'Cerberus Mantle'],
+  Waist: ['Warwolf Belt',"Hurch'lan Sash",'Swift Belt','Fotia Belt','Chaac Belt',"Penitent's Rope","Friar's Rope"],
+  Legs: ['Dusk Trousers',"Byakko's Haidate",'Garrison Hose','Mochizuki Hakama',"Duelist's Tights","Warlock's Tights"],
+  Feet: ['Dusk Ledelsens','Rostrum Pumps','Bounding Boots',"Herald's Gaiters",'Fuma Kyahan','Mochizuki Kyahan',"Duelist's Boots","Warlock's Boots"],
+};
+function poolFor(slot) { return GEAR[slot] || GEAR[slot.replace(/[12]$/, '')] || []; }
+
+/* Autocomplete suggestions, by handler */
+const SUGGEST = {
+  spells: ['Cure','Cure II','Cure III','Cure IV','Cure V','Cure VI','Curaga','Haste','Refresh','Stoneskin','Phalanx','Blink','Aquaveil','Protect','Shell','Regen','Sleep','Sleep II','Slow','Paralyze','Silence','Blind','Bind','Gravity','Dispel','Dia','Bio','Fire','Blizzard','Aero','Stone','Thunder','Water','Banish','Holy','Raise','Reraise','Utsusemi: Ichi','Utsusemi: Ni','Honor March','Victory March'],
+  abilities: ['Provoke','Berserk','Warcry','Defender','Aggressor','Meditate','Third Eye','Hasso','Seigan','Sneak Attack','Trick Attack','Steal','Hide','Flee','Waltz','Convert','Chainspell','Elemental Seal','Benediction','Divine Seal'],
+  weaponskills: ['Fast Blade','Burning Blade','Red Lotus Blade','Seraph Blade','Savage Blade','Requiescat','Evisceration',"Rudra's Storm",'Tachi: Fudo','Tachi: Kasha','Chant du Cygne','Sanguine Blade'],
+};
+function suggestFor(handler) {
+  if (handler === 'HandleAbility') return SUGGEST.abilities;
+  if (handler === 'HandleWeaponskill') return SUGGEST.weaponskills;
+  return SUGGEST.spells;
+}
+
+function mkSet(profile, name, items) {
+  const s = C.newSet(name);
+  Object.keys(items || {}).forEach(k => { s.slots[k] = C.newItem(items[k]); });
+  profile.sets.push(s);
+  return s;
+}
+function rule(profile, handler, name, conds, actions, exclusive, op) {
+  const r = C.newRule(handler);
+  r.name = name || '';
+  r.exclusive = !!exclusive;
+  r.when = { op: op || 'AND', children: conds || [] };
+  r.actions = actions;
+  profile.rules.push(r);
+  return r;
+}
+const cond = (kind, props) => Object.assign(C.newCond(kind), props || {});
+const eq = s => ({ type: 'equipSet', setId: s.id });
+
+function buildMelee(p) {
+  const idle = mkSet(p, 'Idle'), tp = mkSet(p, 'TP'), ws = mkSet(p, 'WS_Default'), rest = mkSet(p, 'Resting');
+  rule(p, 'HandleDefault', 'Idle gear', [], [eq(idle)]);
+  rule(p, 'HandleDefault', 'Resting', [cond('player.status', { value: 'Resting' })], [eq(rest)]);
+  rule(p, 'HandleDefault', 'Fighting', [cond('player.status', { value: 'Engaged' })], [eq(tp)]);
+  rule(p, 'HandleWeaponskill', 'Weaponskill gear', [], [eq(ws)]);
+}
+function buildCaster(p) {
+  const idle = mkSet(p, 'Idle'), rest = mkSet(p, 'Resting'), pre = mkSet(p, 'Precast');
+  const cure = mkSet(p, 'Midcast_Cure'), enf = mkSet(p, 'Midcast_Enfeebling'), enh = mkSet(p, 'Midcast_Enhancing'), nuke = mkSet(p, 'Midcast_Nuke');
+  rule(p, 'HandleDefault', 'Idle gear', [], [eq(idle)]);
+  rule(p, 'HandleDefault', 'Resting', [cond('player.status', { value: 'Resting' })], [eq(rest)]);
+  rule(p, 'HandlePrecast', 'Fast cast', [], [eq(pre)]);
+  rule(p, 'HandleMidcast', 'Cure spells', [cond('action.name', { op: 'contains', value: 'Cure' })], [eq(cure)]);
+  rule(p, 'HandleMidcast', 'Enfeebling', [cond('action.skill', { value: 'Enfeebling Magic' })], [eq(enf)], true);
+  rule(p, 'HandleMidcast', 'Enhancing', [cond('action.skill', { value: 'Enhancing Magic' })], [eq(enh)], true);
+  rule(p, 'HandleMidcast', 'Elemental', [cond('action.skill', { value: 'Elemental Magic' })], [eq(nuke)], true);
+}
+function buildHybrid(p) {
+  buildCaster(p);
+  const tp = mkSet(p, 'TP'), ws = mkSet(p, 'WS_Default');
+  const defRules = p.rules.filter(r => r.handler === 'HandleDefault');
+  const r = C.newRule('HandleDefault');
+  r.name = 'Fighting'; r.when = { op: 'AND', children: [cond('player.status', { value: 'Engaged' })] }; r.actions = [eq(tp)];
+  p.rules.splice(p.rules.indexOf(defRules[defRules.length - 1]) + 1, 0, r);
+  rule(p, 'HandleWeaponskill', 'Weaponskill gear', [], [eq(ws)]);
+}
+
+const TEMPLATES = [
+  ['melee', 'Melee', 'Idle, Resting, TP and weaponskill sets with rules for fighting and resting.'],
+  ['caster', 'Caster', 'Idle, Resting, Precast and four Midcast sets, with rules for cure, enfeebling, enhancing and elemental magic.'],
+  ['hybrid', 'Melee and magic', 'Everything in Caster plus TP and weaponskill sets.'],
+  ['blank', 'Blank', 'An empty profile.'],
+];
+function defaultTemplate(job) { const j = JOBS.find(x => x[0] === job); return j ? j[2] : 'blank'; }
+
+function makeProfile(job, template, name) {
+  const p = C.newProfile(name || job || 'Profile', job);
+  if (template === 'melee') buildMelee(p);
+  else if (template === 'caster') buildCaster(p);
+  else if (template === 'hybrid') buildHybrid(p);
+  return p;
+}
+
+function sampleProject() {
+  const p = C.newProfile('RDM', 'RDM');
+  const idle = mkSet(p, 'Idle', { Main: 'Excalibur', Sub: "Genbu's Shield", Head: 'Walahra Turban', Neck: 'Parade Gorget', Ear1: "Merman's Earring", Ear2: 'Ethereal Earring', Body: 'Vermillion Cloak', Hands: 'Garrison Gloves', Ring1: 'Defending Ring', Ring2: 'Sheltered Ring', Back: 'Shadow Mantle', Waist: "Friar's Rope", Legs: 'Garrison Hose', Feet: "Herald's Gaiters" });
+  const rest = mkSet(p, 'Resting', { Main: 'Dark Staff', Neck: 'Uggalepih Pendant', Body: 'Errant Houppelande', Waist: "Friar's Rope" });
+  const tpN = mkSet(p, 'TP_Normal', { Main: 'Excalibur', Sub: 'Mandau', Head: 'Optical Hat', Neck: 'Spike Necklace', Ear1: 'Brutal Earring', Ear2: 'Suppanomimi', Body: 'Askar Korazin', Hands: 'Dusk Gloves', Ring1: 'Rajas Ring', Ring2: 'Toreador\'s Ring', Back: "Cuchulain's Mantle", Waist: 'Swift Belt', Legs: 'Dusk Trousers', Feet: 'Dusk Ledelsens' });
+  const tpA = mkSet(p, 'TP_Acc', { Main: 'Excalibur', Sub: 'Mandau', Head: 'Optical Hat', Neck: 'Peacock Amulet', Ear1: 'Brutal Earring', Ear2: 'Suppanomimi', Body: 'Askar Korazin', Hands: 'Dusk Gloves', Ring1: 'Rajas Ring', Ring2: 'Toreador\'s Ring', Back: "Cuchulain's Mantle", Waist: 'Warwolf Belt', Legs: 'Dusk Trousers', Feet: 'Dusk Ledelsens' });
+  const ws = mkSet(p, 'WS_Default', { Neck: 'Spike Necklace', Ear1: 'Moonshade Earring', Ear2: 'Brutal Earring', Waist: 'Fotia Belt' });
+  const pre = mkSet(p, 'Precast', { Head: 'Walahra Turban', Ear1: 'Loquac. Earring', Hands: "Warlock's Gloves", Feet: "Warlock's Boots" });
+  const cure = mkSet(p, 'Midcast_Cure', { Main: 'Yagrush', Neck: 'Justice Torque', Hands: 'Bokwus Gloves', Ring1: "Sirona's Ring", Ring2: 'Kunaji Ring' });
+  const enf = mkSet(p, 'Midcast_Enfeebling', { Neck: 'Prudence Torque', Body: "Warlock's Tabard", Hands: "Duelist's Gloves", Ring1: 'Vivian Ring' });
+  const enh = mkSet(p, 'Midcast_Enhancing', { Body: "Duelist's Tabard", Hands: "Duelist's Gloves", Waist: "Penitent's Rope" });
+  tpN.note = 'Sample gear for layout testing, not a recommended build.';
+  p.variables.push({ id: C.uid('var'), name: 'TPMode', options: ['Normal', 'Acc'], value: 'Normal' });
+  const tpVar = p.variables[0];
+  p.commands.push({ id: C.uid('cmd'), name: 'tpmode', kind: 'cycle', varId: tpVar.id });
+  p.commands.push({ id: C.uid('cmd'), name: 'lockidle', kind: 'lock', setId: idle.id, seconds: 60 });
+  rule(p, 'HandleDefault', 'Idle gear', [], [eq(idle)]);
+  rule(p, 'HandleDefault', 'Resting', [cond('player.status', { value: 'Resting' })], [eq(rest)]);
+  rule(p, 'HandleDefault', 'Fighting (set follows TPMode)', [cond('player.status', { value: 'Engaged' })], [{ type: 'equipSetVar', prefix: 'TP_', varId: tpVar.id }]);
+  rule(p, 'HandlePrecast', 'Fast cast', [], [eq(pre)]);
+  rule(p, 'HandleMidcast', 'Cure spells', [cond('action.name', { op: 'contains', value: 'Cure' })], [eq(cure)]);
+  rule(p, 'HandleMidcast', 'Enfeebling magic', [cond('action.skill', { value: 'Enfeebling Magic' })], [eq(enf)], true);
+  rule(p, 'HandleMidcast', 'Enhancing magic', [cond('action.skill', { value: 'Enhancing Magic' })], [eq(enh)], true);
+  rule(p, 'HandleWeaponskill', 'Weaponskill gear', [], [eq(ws)]);
+  return { schema: 1, name: 'My Gear Project', profiles: [p] };
+}
+
+root.Data = { JOBS, GEAR, poolFor, suggestFor, TEMPLATES, defaultTemplate, makeProfile, sampleProject };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Ashita Gear Studio UI. Plain DOM + event delegation so the prototype stays one file.
+   The real build would port these views to React components; core.js stays as it is. */
+(function () {
+'use strict';
+const C = window.Core, D = window.Data;
+const KEY = 'ags:project:v1';
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+/* ---------------- state ---------------- */
+let project = null;
+let storageOK = true;
+let downloads = null;
+const ui = { tab: 'sets', profileId: null, setId: null, slot: 'Head', handler: 'HandleDefault', search: '', dialog: null, armed: null, toast: null, undo: null, flash: null, focusSearch: false, savedAt: 0 };
+
+function loadProject() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return C.normaliseProject(JSON.parse(raw));
+  } catch (e) { /* fall through */ }
+  return D.sampleProject();
+}
+var saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    try { localStorage.setItem(KEY, JSON.stringify(project)); storageOK = true; ui.savedAt = Date.now(); }
+    catch (e) { storageOK = false; }
+    const s = $('#savestate'); if (s) s.textContent = saveText();
+  }, 250);
+}
+function saveText() { return storageOK ? 'Autosaved in this browser' : 'Autosave is unavailable here. Use Save project.'; }
+function flushSave() {
+  if (saveTimer === null) return;
+  clearTimeout(saveTimer); saveTimer = null;
+  try { localStorage.setItem(KEY, JSON.stringify(project)); storageOK = true; ui.savedAt = Date.now(); } catch (e) { storageOK = false; }
+}
+const prof = () => project.profiles.find(p => p.id === ui.profileId) || project.profiles[0];
+function ensureSelection() {
+  const p = prof();
+  ui.profileId = p.id;
+  if (!p.sets.find(s => s.id === ui.setId)) ui.setId = p.sets[0] ? p.sets[0].id : null;
+}
+const curSet = () => prof().sets.find(s => s.id === ui.setId) || null;
+
+/* ---------------- tiny utils ---------------- */
+function toast(msg, undoFn) {
+  ui.toast = { msg, undoFn };
+  renderToast();
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => { ui.toast = null; renderToast(); }, undoFn ? 9000 : 3500);
+}
+function renderToast() {
+  const el = $('#toast');
+  if (!el) return;
+  el.innerHTML = ui.toast ? '<div class="toast" role="status"><span>' + esc(ui.toast.msg) + '</span>' + (ui.toast.undoFn ? '<button class="btn small" data-a="toast-undo">Undo</button>' : '') + '</div>' : '';
+}
+function uniqueName(base, names) {
+  const low = names.map(n => n.toLowerCase());
+  if (low.indexOf(base.toLowerCase()) < 0) return base;
+  let i = 2; while (low.indexOf((base + '_' + i).toLowerCase()) >= 0) i++;
+  return base + '_' + i;
+}
+function arm(key, fn) {
+  if (ui.armed === key) { ui.armed = null; fn(); return; }
+  ui.armed = key;
+  setTimeout(() => { if (ui.armed === key) { ui.armed = null; render(); } }, 3000);
+  render();
+}
+const armed = k => ui.armed === k;
+function delBtn(key, label, cls) {
+  return '<button class="btn small danger ' + (cls || '') + (armed(key) ? ' armed' : '') + '" data-a="del" data-key="' + esc(key) + '">' + (armed(key) ? 'Click again to delete' : esc(label || 'Delete')) + '</button>';
+}
+function filledCount(s) { return C.SLOTS.filter(sl => C.itemExpr(s.slots[sl])).length; }
+
+/* ---------------- header + tabs ---------------- */
+const CRYSTAL = '<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 26 14 16 30 6 14Z" fill="#1b2756" stroke="#e3bd62" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 14h20M16 2v28M11 14 16 2l5 12-5 16Z" fill="none" stroke="#e3bd62" stroke-opacity=".55" stroke-width="1"/></svg>';
+
+function headerHtml() {
+  const p = prof();
+  return '<div class="bar">' +
+    '<div class="brand">' + CRYSTAL + '<div><h1>Ashita Gear Studio</h1><small>LuAshitacast profile builder</small></div></div>' +
+    '<div class="bar-mid">' +
+      '<input type="text" class="projname" id="projname" aria-label="Project name" data-bind="proj|name" value="' + esc(project.name) + '">' +
+      '<div class="pill-select"><select id="profsel" aria-label="Profile" data-c="profile">' +
+        project.profiles.map(x => '<option value="' + x.id + '"' + (x.id === p.id ? ' selected' : '') + '>' + esc(x.name) + (x.job && x.job !== x.name ? ' (' + esc(x.job) + ')' : '') + '</option>').join('') +
+      '</select><button class="btn small" data-a="new-profile" title="Add a profile">+ Profile</button></div>' +
+    '</div>' +
+    '<div class="bar-end">' +
+      '<button class="btn small" data-a="open-import">Import Lua</button>' +
+      '<button class="btn small" data-a="open-project">Open project</button>' +
+      '<button class="btn small" data-a="save-project">Save project</button>' +
+      '<button class="btn primary" data-a="export-lua">Export Lua</button>' +
+    '</div></div>';
+}
+function tabsHtml() {
+  const p = prof();
+  const issues = C.validate(p);
+  const errs = issues.filter(i => i.sev === 'error').length, warns = issues.filter(i => i.sev === 'warn').length;
+  const tabs = [['sets', 'Gear Sets', p.sets.length], ['rules', 'Rules', p.rules.length], ['profile', 'Profile', null], ['lua', 'Lua & Checks', errs ? errs : warns]];
+  return tabs.map(t => {
+    let b = '';
+    if (t[0] === 'lua') b = t[2] ? '<span class="badge ' + (errs ? 'err' : 'warn') + '">' + t[2] + '</span>' : '';
+    else if (t[2] != null) b = '<span class="badge">' + t[2] + '</span>';
+    return '<button class="tab" role="tab" data-a="tab" data-tab="' + t[0] + '" aria-selected="' + (ui.tab === t[0]) + '">' + t[1] + b + '</button>';
+  }).join('');
+}
+
+/* ---------------- gear sets tab ---------------- */
+function setListHtml(p) {
+  if (!p.sets.length) return '<p class="hint" style="padding:8px">No gear sets yet.</p>';
+  return p.sets.map(s => '<button class="setrow" data-a="pick-set" data-id="' + s.id + '" aria-current="' + (s.id === ui.setId) + '"><b>' + esc(s.name || '(unnamed)') + '</b><span>' + filledCount(s) + ' of 16 slots</span><i class="cnt">' + filledCount(s) + '</i></button>').join('');
+}
+function slotTile(s, slot) {
+  const it = s.slots[slot];
+  const filled = it && C.itemExpr(it);
+  let meta = '';
+  if (it && it.raw) meta += '<span class="tag raw">Custom Lua</span>';
+  if (it && (it.augPath || (it.augments && it.augments.length))) meta += '<span class="tag">' + (it.augPath ? 'Path ' + esc(it.augPath) : '') + (it.augPath && it.augments.length ? ' · ' : '') + (it.augments.length ? it.augments.length + ' aug' : '') + '</span>';
+  return '<button class="slot' + (filled ? ' filled' : '') + '" data-a="slot" data-slot="' + slot + '" aria-pressed="' + (ui.slot === slot) + '">' +
+    '<span class="sl"><span>' + slot + '</span><i class="gem"></i></span>' +
+    '<span class="item">' + (filled ? (it.raw ? esc(it.raw) : esc(it.name)) : '<span class="empty">Empty</span>') + '</span>' +
+    '<span class="meta">' + meta + '</span></button>';
+}
+function dollHtml(s) {
+  return C.SLOTS.map(sl => slotTile(s, sl)).join('');
+}
+function usedBy(p, set) {
+  const out = [];
+  p.rules.forEach(r => {
+    if (r.kind !== 'rule') return;
+    if (r.actions.some(a => (a.type === 'equipSet' && (a.setId === set.id)) || (a.type === 'equipSetVar' && a.varId && (p.variables.find(v => v.id === a.varId) || { options: [] }).options.some(o => ((a.prefix || '') + o).toLowerCase() === set.name.toLowerCase()))))
+      out.push(r);
+  });
+  return out;
+}
+function setsTab() {
+  const p = prof(), s = curSet();
+  const left = '<aside class="win"><header><h2>Gear sets</h2></header><div class="setlist" id="setlist">' + setListHtml(p) + '</div>' +
+    '<div class="body" style="padding-top:4px"><div class="btn-row"><button class="btn small primary" data-a="new-set">+ New set</button>' +
+    '<button class="btn small" data-a="dup-set"' + (s ? '' : ' disabled') + '>Duplicate</button>' + (s ? delBtn('set:' + s.id, 'Delete') : '') + '</div></div></aside>';
+  let mid;
+  if (!s) {
+    mid = '<section class="win doll-wrap"><div class="empty-state" style="border:0">Create your first gear set. A set is a named group of equipment such as Idle, TP or Fast Cast.<br><br><button class="btn primary" data-a="new-set">+ New set</button></div></section>';
+  } else {
+    const by = usedBy(p, s);
+    mid = '<section class="win doll-wrap"><div class="doll-title"><input type="text" class="name" aria-label="Gear set name" data-bind="set|' + s.id + '|name" value="' + esc(s.name) + '"></div>' +
+      '<div class="doll" id="doll"><div class="doll-crest" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 2 26 14 16 30 6 14Z" fill="none" stroke="#e3bd62" stroke-width="1"/><path d="M6 14h20M16 2v28M11 14 16 2l5 12-5 16Z" fill="none" stroke="#e3bd62" stroke-width=".6"/></svg></div>' + dollHtml(s) + '</div>' +
+      '<div class="used-in">' + (by.length ? 'Used by: ' + by.map(r => '<button class="chip" data-a="goto-rule" data-id="' + r.id + '">' + esc(C.ruleTitle(r, p)) + ' in ' + esc((C.HANDLERS.find(h => h.id === r.handler) || {}).label || r.handler) + '</button>').join('') : 'No rule uses this set yet. Add one on the Rules tab, or equip it in game with <code>/lac set ' + esc(s.name) + '</code>.') + '</div>' +
+      '<textarea class="note" aria-label="Note for this set" placeholder="Optional note, written into the file as a comment" rows="1" data-bind="set|' + s.id + '|note">' + esc(s.note) + '</textarea></section>';
+  }
+  return '<div class="workspace">' + left + mid + inspectorHtml() + '</div>';
+}
+function resultsHtml() {
+  const s = curSet(); if (!s) return '';
+  const q = ui.search.trim().toLowerCase();
+  const pool = D.poolFor(ui.slot).filter(n => !q || n.toLowerCase().indexOf(q) >= 0).slice(0, 60);
+  const exact = pool.some(n => n.toLowerCase() === q);
+  let h = '';
+  if (q && !exact) h += '<button class="result custom" data-a="pick-item" data-name="' + esc(ui.search.trim()) + '">Use “' + esc(ui.search.trim()) + '” as typed</button>';
+  h += pool.map(n => '<button class="result" data-a="pick-item" data-name="' + esc(n) + '">' + esc(n) + '</button>').join('');
+  if (!pool.length && !q) h += '<p class="hint" style="padding:10px">No sample items for this slot. Type an item name above.</p>';
+  return h;
+}
+function inspectorHtml() {
+  const s = curSet();
+  if (!s) return '<aside class="win inspector" id="inspector"><header><h2>Slot</h2></header><div class="body"><p class="hint">Create a gear set to start choosing equipment.</p></div></aside>';
+  const it = s.slots[ui.slot];
+  let detail = '';
+  if (it && it.raw) {
+    detail = '<div class="row-item"><span class="raw-flag">Custom Lua</span><code style="font-family:var(--font-mono);font-size:13px;overflow-wrap:anywhere">' + esc(it.raw) + '</code><p class="hint small">This entry is written in Lua that cannot be shown as a plain item. It is kept exactly as written. Choose an item below to replace it.</p></div>';
+  } else if (it) {
+    const b = 'item|' + s.id + '|' + ui.slot + '|';
+    detail = '<div class="row-item"><label class="field">Item name<input type="text" data-bind="' + b + 'name" value="' + esc(it.name) + '"></label>' +
+      '<div class="grid2"><label class="field">Augment path<select data-bind="' + b + 'augPath" data-render="1"><option value="">None</option>' + ['A', 'B', 'C', 'D'].map(x => '<option' + (it.augPath === x ? ' selected' : '') + '>' + x + '</option>').join('') + '</select></label>' +
+      '<div class="field" style="align-content:end"><span>Other fields</span><span class="hint small">' + ((it.extras || []).length ? it.extras.map(e => esc(e.k + ' = ' + e.raw)).join(', ') : 'none') + '</span></div></div>' +
+      '<label class="field">Augments, one per line<textarea rows="3" data-bind="' + b + 'augments" placeholder="Example: DEX+5">' + esc((it.augments || []).join('\n')) + '</textarea></label>' +
+      '<p class="hint small">LuAshitacast wears an item whose augments match at least one line (a single Augment) or every line (several).</p></div>';
+  }
+  return '<aside class="win inspector" id="inspector"><header><h2>' + ui.slot + ' slot</h2><span class="hint small" style="margin-left:auto">in “' + esc(s.name) + '”</span></header><div class="body">' +
+    '<label class="field">Search or type an item<input type="text" id="itemsearch" autocomplete="off" data-search="1" data-enter="1" placeholder="Search the sample list, or type any name" value="' + esc(ui.search) + '"></label>' +
+    '<div class="results" id="results">' + resultsHtml() + '</div>' +
+    '<div class="btn-row"><button class="btn small" data-a="clear-slot"' + (it ? '' : ' disabled') + '>Empty this slot</button></div>' +
+    '<p class="sample-note">The built-in list is a small sample. Any item name you type is written as is, so it works with your own gear.</p>' + detail + '</div></aside>';
+}
+
+/* ---------------- rules tab ---------------- */
+function kindSelect(c, r, path) {
+  const groups = {};
+  Object.keys(C.CONDS).forEach(k => { const g = C.CONDS[k].group; (groups[g] = groups[g] || []).push(k); });
+  return '<select aria-label="Condition type" data-c="cond-kind" data-rule="' + r.id + '" data-path="' + path + '">' +
+    Object.keys(groups).map(g => '<optgroup label="' + g + '">' + groups[g].map(k => '<option value="' + k + '"' + (k === c.kind ? ' selected' : '') + '>' + esc(C.CONDS[k].label) + '</option>').join('') + '</optgroup>').join('') + '</select>';
+}
+function condRow(r, path, c, p) {
+  const spec = C.CONDS[c.kind] || C.CONDS['player.status'];
+  const b = 'cond|' + r.id + '|' + path + '|';
+  const rm = '<button class="btn ghost icon-btn" aria-label="Remove condition" data-a="cond-del" data-rule="' + r.id + '" data-path="' + path + '">✕</button>';
+  const opSel = () => '<select aria-label="Operator" data-bind="' + b + 'op" data-render="1">' + spec.ops.map(o => '<option value="' + o[0] + '"' + (o[0] === c.op ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select>';
+  switch (spec.type) {
+    case 'enum': {
+      const opts = spec.options.indexOf(c.value) < 0 ? [c.value].concat(spec.options) : spec.options;
+      return '<div class="crow">' + kindSelect(c, r, path) + opSel() + '<select aria-label="Value" data-bind="' + b + 'value" data-render="1">' + opts.map(o => '<option' + (o === c.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</select>' + rm + '</div>';
+    }
+    case 'num':
+      return '<div class="crow">' + kindSelect(c, r, path) + opSel() + '<input type="number" aria-label="Value" data-bind="' + b + 'value" value="' + esc(c.value) + '">' + rm + '</div>';
+    case 'text':
+      return '<div class="crow">' + kindSelect(c, r, path) + opSel() + '<input type="text" aria-label="Value" data-bind="' + b + 'value" value="' + esc(c.value) + '">' + rm + '</div>';
+    case 'name': {
+      const dl = r.handler === 'HandleAbility' ? 'dl-abilities' : r.handler === 'HandleWeaponskill' ? 'dl-weaponskills' : 'dl-spells';
+      return '<div class="crow">' + kindSelect(c, r, path) + opSel() + '<input type="text" list="' + dl + '" aria-label="' + (c.op === 'oneof' ? 'Names separated by commas' : 'Name') + '" placeholder="' + (c.op === 'oneof' ? 'Cure, Cure II' : 'Cure') + '" data-bind="' + b + 'value" value="' + esc(c.value) + '">' + rm + '</div>';
+    }
+    case 'bool': case 'pet':
+      return '<div class="crow two">' + kindSelect(c, r, path) + opSel() + rm + '</div>';
+    case 'buff':
+      return '<div class="crow">' + kindSelect(c, r, path) + '<input type="text" list="dl-buffs" aria-label="Status effect" placeholder="Haste" data-bind="' + b + 'value" value="' + esc(c.value) + '">' + opSel() + rm + '</div>';
+    case 'var': {
+      const v = C.findVar(p, c.varId);
+      const vsel = '<select aria-label="Variable" data-bind="' + b + 'varId" data-render="1"><option value="">Choose…</option>' + p.variables.map(x => '<option value="' + x.id + '"' + (x.id === c.varId ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') + '</select>';
+      const vals = v ? (v.options.indexOf(c.value) < 0 && c.value ? [c.value].concat(v.options) : v.options) : [];
+      const valSel = '<select aria-label="Value" data-bind="' + b + 'value" data-render="1">' + (vals.indexOf(c.value) < 0 ? '<option value="">Choose…</option>' : '') + vals.map(o => '<option' + (o === c.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</select>';
+      return '<div class="crow">' + kindSelect(c, r, path) + '<div class="pair">' + vsel + opSel() + '</div>' + valSel + rm + '</div>';
+    }
+    case 'raw':
+      return '<div class="crow rawc">' + kindSelect(c, r, path) + '<input type="text" style="font-family:var(--font-mono);font-size:13px" aria-label="Lua expression" placeholder="TPMode == \'Acc\'" data-bind="' + b + 'expr" value="' + esc(c.expr || '') + '">' + rm + '</div>';
+  }
+  return '';
+}
+function groupHtml(r, path, g, p, depth) {
+  const gb = 'grp|' + r.id + '|' + path;
+  const kids = g.children.map((ch, i) => {
+    const cp = path === '' ? String(i) : path + '.' + i;
+    return C.isGroup(ch) ? groupHtml(r, cp, ch, p, depth + 1) : condRow(r, cp, ch, p);
+  }).join('');
+  const multi = g.children.length > 1;
+  const head = '<div class="group-head">' +
+    (multi || path !== '' ? '<button class="logic ' + (g.op === 'OR' ? 'or' : 'and') + '" data-a="grp-toggle" data-rule="' + r.id + '" data-path="' + path + '" title="Switch between all and any">' + (g.op === 'OR' ? 'ANY of these' : 'ALL of these') + '</button>' : '') +
+    (path !== '' ? '<button class="btn ghost small" data-a="grp-del" data-rule="' + r.id + '" data-path="' + path + '">Remove group</button>' : '') + '</div>';
+  const empty = !g.children.length ? '<p class="hint small">' + (path === '' ? 'No conditions, so this rule always applies.' : 'Empty group.') + '</p>' : '';
+  const add = '<div class="add-row"><button class="btn small" data-a="cond-add" data-rule="' + r.id + '" data-path="' + path + '">+ Condition</button>' + (depth < 2 ? '<button class="btn small ghost" data-a="grp-add" data-rule="' + r.id + '" data-path="' + path + '">+ Group</button>' : '') + '</div>';
+  return '<div class="group">' + head + kids + empty + add + '</div>';
+}
+function actionRow(r, i, a, p) {
+  const b = 'act|' + r.id + '|' + i + '|';
+  const typeSel = '<select aria-label="Action type" data-c="act-type" data-rule="' + r.id + '" data-idx="' + i + '">' + C.ACTION_TYPES.map(t => '<option value="' + t[0] + '"' + (t[0] === a.type ? ' selected' : '') + '>' + t[1] + '</option>').join('') + '</select>';
+  const rm = '<button class="btn ghost icon-btn" aria-label="Remove action" data-a="act-del" data-rule="' + r.id + '" data-idx="' + i + '">✕</button>';
+  const varSel = key => '<select aria-label="Variable" data-bind="' + b + key + '" data-render="1"><option value="">Choose a variable…</option>' + p.variables.map(x => '<option value="' + x.id + '"' + (x.id === a[key] ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') + '</select>';
+  let f = '';
+  switch (a.type) {
+    case 'equipSet': {
+      const found = C.findSet(p, a.setId);
+      f = '<select aria-label="Gear set" data-bind="' + b + 'setId" data-render="1">' + (!found ? '<option value="">' + (a.setName ? 'Missing: ' + esc(a.setName) : 'Choose a set…') + '</option>' : '') + p.sets.map(s => '<option value="' + s.id + '"' + (found && s.id === found.id ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>';
+      break;
+    }
+    case 'equipSetVar':
+      f = '<div class="pair"><input type="text" aria-label="Set name prefix" placeholder="Prefix, e.g. TP_" data-bind="' + b + 'prefix" value="' + esc(a.prefix || '') + '">' + varSel('varId') + '</div><p class="hint small">Equips the set named prefix + the variable’s current value, for example TP_Acc.</p>';
+      break;
+    case 'equipItem':
+      f = '<div class="pair"><select aria-label="Slot" data-bind="' + b + 'slot" data-render="1">' + C.SLOTS.map(s => '<option' + (s === a.slot ? ' selected' : '') + '>' + s + '</option>').join('') + '</select><input type="text" aria-label="Item" placeholder="Item name" data-bind="' + b + 'item" value="' + esc(a.item || '') + '"></div>';
+      break;
+    case 'message':
+      f = '<input type="text" aria-label="Message" placeholder="Text shown in the chat log" data-bind="' + b + 'text" value="' + esc(a.text || '') + '">';
+      break;
+    case 'setVar': {
+      const v = C.findVar(p, a.varId);
+      f = '<div class="pair">' + varSel('varId') + (v ? '<select aria-label="Value" data-bind="' + b + 'value" data-render="1">' + (v.options.indexOf(a.value) < 0 ? '<option value="">Choose…</option>' : '') + v.options.map(o => '<option' + (o === a.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</select>' : '') + '</div>';
+      break;
+    }
+    case 'rawLua':
+      f = '<textarea rows="3" aria-label="Lua code" placeholder="Lua statements" data-bind="' + b + 'code">' + esc(a.code || '') + '</textarea>';
+      break;
+  }
+  return '<div class="arow">' + typeSel + '<div class="stack">' + f + '</div>' + rm + '</div>';
+}
+function engHtml(r, p) { return '<b>Plain English:</b> ' + esc(C.describeRule(r, p)); }
+function ruleCard(r, n, siblings, p) {
+  const pos = siblings.indexOf(r);
+  const head = '<div class="rule-head"><span class="num" title="Rules run top to bottom">' + (n + 1) + '</span>' +
+    '<label class="toggle" title="Switch the rule off without deleting it"><input type="checkbox" data-bind="rule|' + r.id + '|enabled" data-render="1"' + (r.enabled ? ' checked' : '') + '>On</label>' +
+    '<input type="text" class="rname" aria-label="Rule name" placeholder="' + esc(C.ruleTitle(Object.assign({}, r, { name: '' }), p)) + '" data-bind="rule|' + r.id + '|name" value="' + esc(r.name) + '">' +
+    (r.kind === 'rule' && pos > 0 ? '<label class="toggle" title="Generates an elseif: this rule is only checked when the rule above did not match"><input type="checkbox" data-bind="rule|' + r.id + '|exclusive" data-render="1"' + (r.exclusive ? ' checked' : '') + '>Otherwise</label>' : '') +
+    '<button class="btn ghost icon-btn" aria-label="Move up" data-a="rule-up" data-id="' + r.id + '"' + (pos === 0 ? ' disabled' : '') + '>↑</button>' +
+    '<button class="btn ghost icon-btn" aria-label="Move down" data-a="rule-down" data-id="' + r.id + '"' + (pos === siblings.length - 1 ? ' disabled' : '') + '>↓</button>' +
+    '<button class="btn ghost small" data-a="rule-dup" data-id="' + r.id + '">Duplicate</button>' + delBtn('rule:' + r.id, 'Delete') + '</div>';
+  let body;
+  if (r.kind === 'raw') {
+    body = '<div class="rule-body" style="grid-template-columns:1fr"><div><p class="raw-flag">Custom Lua block</p><p class="hint small" style="margin-bottom:8px">This code could not be shown as a visual rule. It is written to the file exactly as you see it.</p><textarea rows="' + Math.min(14, Math.max(4, (r.code || '').split('\n').length + 1)) + '" aria-label="Lua code" data-bind="rule|' + r.id + '|code">' + esc(r.code || '') + '</textarea></div></div>';
+  } else {
+    body = '<div class="rule-body"><div><div class="col-title">When</div>' + groupHtml(r, '', r.when, p, 0) + '</div>' +
+      '<div><div class="col-title">Then</div><div class="actions-list">' + r.actions.map((a, i) => actionRow(r, i, a, p)).join('') + '<div class="add-row"><button class="btn small" data-a="act-add" data-rule="' + r.id + '">+ Action</button></div></div></div>' +
+      '<div class="english" data-eng="' + r.id + '">' + engHtml(r, p) + '</div></div>';
+  }
+  return '<article class="win rule' + (r.enabled ? '' : ' off') + (ui.flash === r.id ? ' flash' : '') + '" id="rule-' + r.id + '">' + head + body + '</article>';
+}
+function rulesTab() {
+  const p = prof();
+  const h = C.HANDLERS.find(x => x.id === ui.handler);
+  const pills = C.HANDLERS.map(x => {
+    const n = p.rules.filter(r => r.handler === x.id).length;
+    return '<button class="hpill" role="tab" data-a="handler" data-id="' + x.id + '" aria-selected="' + (x.id === ui.handler) + '">' + x.label + (n ? '<span class="badge">' + n + '</span>' : '') + '</button>';
+  }).join('');
+  const rules = p.rules.filter(r => r.handler === ui.handler);
+  const list = rules.length ? rules.map((r, i) => ruleCard(r, i, rules, p)).join('') :
+    '<div class="empty-state">No rules in ' + h.label + ' yet.<br>A rule says “when these things are true, equip this set”.<br><br><button class="btn primary" data-a="rule-add">+ Add a rule</button></div>';
+  return '<div class="handler-tabs" role="tablist" aria-label="When rules run">' + pills + '</div>' +
+    '<div class="handler-info"><b>' + h.label + '</b> <code>profile.' + h.id + '</code><br>' + esc(h.blurb) + ' Rules run top to bottom. When two rules fill the same slot, the later one wins, unless you tick “Otherwise” to make a rule apply only when the one above did not match.' + (h.action ? '' : ' There is no current action here, so spell and ability checks are not available.') + '</div>' +
+    '<div class="rules">' + list + (rules.length ? '<div class="add-row"><button class="btn primary" data-a="rule-add">+ Add a rule</button><button class="btn" data-a="raw-add">+ Custom Lua block</button></div>' : '') + '</div>';
+}
+
+/* ---------------- profile tab ---------------- */
+function profileTab() {
+  const p = prof();
+  const jobs = '<option value="">None</option>' + D.JOBS.map(j => '<option value="' + j[0] + '"' + (p.job === j[0] ? ' selected' : '') + '>' + j[0] + ' · ' + j[1] + '</option>').join('');
+  const prow = '<div class="win"><header><h2>Profile</h2></header><div class="body form">' +
+    '<div class="grid2"><label class="field">Name<input type="text" data-bind="prof|name" value="' + esc(p.name) + '"></label><label class="field">Job<select data-bind="prof|job" data-render="1">' + jobs + '</select></label></div>' +
+    '<p class="hint small">Save the exported file as <code>' + esc(p.job || 'Job') + '.lua</code> in <code>ashita/config/addons/luashitacast/CharName_CharId/</code>.</p>' +
+    '<label class="toggle"><input type="checkbox" data-bind="psetting|allowAddSet"' + (p.settings.allowAddSet ? ' checked' : '') + '>Allow <code>/lac addset</code> in game</label>' +
+    '<label class="toggle"><input type="checkbox" data-bind="psetting|addSetBackup"' + (p.settings.addSetBackup ? ' checked' : '') + '>Back up the profile before <code>addset</code> writes to it</label>' +
+    '<div class="btn-row">' + (project.profiles.length > 1 ? delBtn('prof:' + p.id, 'Delete this profile') : '<span class="hint small">The last profile cannot be deleted.</span>') + '</div></div></div>';
+
+  const vars = '<div class="win"><header><h2>Variables</h2></header><div class="body form">' +
+    '<p class="hint small">A variable holds a mode such as Normal or Acc. Rules can check it, equip a set named after it, and commands can change it in game.</p>' +
+    p.variables.map(v => '<div class="row-item"><div class="grid2"><label class="field">Name<input type="text" data-bind="var|' + v.id + '|name" value="' + esc(v.name) + '"></label>' +
+      '<label class="field">Options, separated by commas<input type="text" data-bind="var|' + v.id + '|options" value="' + esc(v.options.join(', ')) + '"></label></div>' +
+      '<div class="btn-row" style="align-items:center"><label class="field" style="grid-auto-flow:column;align-items:center;gap:8px">Starts as<select data-bind="var|' + v.id + '|value" style="width:auto">' + v.options.map(o => '<option' + (o === v.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</select></label>' + delBtn('var:' + v.id, 'Delete', '') + '</div></div>').join('') +
+    '<div class="add-row"><button class="btn small" data-a="var-add">+ Variable</button></div></div></div>';
+
+  const cmds = '<div class="win"><header><h2>Commands</h2></header><div class="body form">' +
+    '<p class="hint small">Commands run in game with <code>/lac fwd name</code>. Bind them to a macro or key.</p>' +
+    p.commands.map(c => {
+      const b = 'cmd|' + c.id + '|';
+      const varSel = '<select aria-label="Variable" data-bind="' + b + 'varId" data-render="1"><option value="">Choose a variable…</option>' + p.variables.map(x => '<option value="' + x.id + '"' + (x.id === c.varId ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') + '</select>';
+      let f = '';
+      if (c.kind === 'cycle') f = varSel;
+      else if (c.kind === 'set') { const v = C.findVar(p, c.varId); f = '<div class="pair">' + varSel + (v ? '<select aria-label="Value" data-bind="' + b + 'value" data-render="1">' + (v.options.indexOf(c.value) < 0 ? '<option value="">Choose…</option>' : '') + v.options.map(o => '<option' + (o === c.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</select>' : '') + '</div>'; }
+      else if (c.kind === 'lock') f = '<div class="pair"><select aria-label="Gear set" data-bind="' + b + 'setId" data-render="1"><option value="">Choose a set…</option>' + p.sets.map(s => '<option value="' + s.id + '"' + (s.id === c.setId ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select><input type="number" aria-label="Seconds" data-bind="' + b + 'seconds" value="' + esc(c.seconds || 30) + '" style="max-width:110px"><span class="hint small" style="align-self:center;flex:0 0 auto">seconds</span></div>';
+      else f = '<textarea rows="3" aria-label="Lua code" data-bind="' + b + 'code">' + esc(c.code || '') + '</textarea>';
+      return '<div class="row-item"><div class="grid2"><label class="field">Command name<input type="text" data-bind="' + b + 'name" value="' + esc(c.name) + '" placeholder="tpmode"></label>' +
+        '<label class="field">What it does<select data-c="cmd-kind" data-id="' + c.id + '">' + [['cycle', 'Cycle a variable'], ['set', 'Set a variable'], ['lock', 'Lock a gear set'], ['raw', 'Custom Lua']].map(k => '<option value="' + k[0] + '"' + (k[0] === c.kind ? ' selected' : '') + '>' + k[1] + '</option>').join('') + '</select></label></div>' + f +
+        '<div class="btn-row" style="align-items:center"><span class="hint small">In game: <code>/lac fwd ' + esc((c.name || 'name').trim().toLowerCase()) + '</code></span><span style="margin-left:auto">' + delBtn('cmd:' + c.id, 'Delete') + '</span></div></div>';
+    }).join('') + '<div class="add-row"><button class="btn small" data-a="cmd-add">+ Command</button></div></div></div>';
+
+  const adv = '<details class="adv"' + ((p.raw.custom || p.raw.OnLoad || p.raw.OnUnload || p.raw.HandleCommand) ? ' open' : '') + '><summary>Advanced: custom Lua</summary><div class="inner">' +
+    '<p class="hint small">For anything the visual tools cannot express. Imported code that could not be turned into rules is kept here. Nothing in these boxes is changed by Gear Studio.</p>' +
+    [['custom', 'Top-level code (runs when the file loads, before the handlers)'], ['OnLoad', 'Extra code inside OnLoad'], ['OnUnload', 'Code inside OnUnload'], ['HandleCommand', 'Code inside HandleCommand (runs before your commands above)']].map(x =>
+      '<label class="field">' + x[1] + '<textarea rows="' + (x[0] === 'custom' ? 8 : 4) + '" data-bind="raw|' + x[0] + '" spellcheck="false">' + esc(p.raw[x[0]] || '') + '</textarea></label>').join('') + '</div></details>';
+  return '<div class="cols"><div class="stack-16">' + prow + vars + '</div><div class="stack-16">' + cmds + adv + '</div></div>';
+}
+
+/* ---------------- Lua & checks tab ---------------- */
+function issuesHtml(issues) {
+  if (!issues.length) return '<div class="allgood">No problems found. This profile is ready to export.</div>';
+  return issues.map((i, n) => '<div class="issue ' + i.sev + '"><i class="dot"></i><b>' + esc(i.title) + '</b><p>' + esc(i.detail) + '</p>' +
+    (i.ref && i.ref.tab ? '<button class="btn small ghost go" data-a="goto-issue" data-n="' + n + '">Show me</button>' : '') + '</div>').join('');
+}
+let lastIssues = [];
+function luaTab() {
+  const p = prof();
+  const lua = C.generateLua(p);
+  lastIssues = C.validate(p);
+  const errs = lastIssues.filter(i => i.sev === 'error').length, warns = lastIssues.filter(i => i.sev === 'warn').length;
+  const rep = p.importReport;
+  let repHtml = '';
+  if (rep) {
+    repHtml = '<div class="win"><header><h2>Import report</h2><button class="btn ghost small" style="margin-left:auto" data-a="dismiss-report">Dismiss</button></header>' +
+      '<div class="stats"><span><b>' + rep.sets + '</b> gear sets</span><span><b>' + rep.rules + '</b> rules</span><span><b>' + rep.rawBlocks + '</b> custom Lua blocks</span><span><b>' + rep.customLines + '</b> lines of other Lua kept</span></div>' +
+      (rep.notes.length ? rep.notes.map(n => '<div class="note-line"><span class="ln">line ' + n.line + '</span>' + esc(n.text) + '</div>').join('') : '<div class="allgood">Everything in this file was recognised.</div>') +
+      (rep.noteCount > rep.notes.length ? '<div class="note-line hint">And ' + (rep.noteCount - rep.notes.length) + ' more.</div>' : '') + '</div>';
+  }
+  return '<div class="lua-grid"><section class="win"><header><h2>Generated Lua</h2><div class="btn-row" style="margin-left:auto"><button class="btn small" data-a="copy-lua">Copy</button><button class="btn small primary" data-a="export-lua">Save file</button></div></header>' +
+    '<div class="stats"><span><b>' + lua.split('\n').length + '</b> lines</span><span><b>' + p.sets.length + '</b> sets</span><span><b>' + p.rules.filter(r => r.enabled).length + '</b> active rules</span></div>' +
+    '<pre class="lua" tabindex="0" aria-label="Generated Lua">' + C.highlightLua(lua) + '</pre></section>' +
+    '<div class="checks stack-16"><section class="win"><header><h2>Checks</h2><span class="hint small" style="margin-left:auto">' + (errs ? errs + ' to fix' : '') + (errs && warns ? ', ' : '') + (warns ? warns + ' to review' : '') + '</span></header><div id="issues">' + issuesHtml(lastIssues) + '</div></section>' + repHtml + '</div></div>';
+}
+
+/* ---------------- dialogs ---------------- */
+function dialogHtml() {
+  const d = ui.dialog;
+  if (!d) return '';
+  if (d.type === 'new-profile') {
+    return '<div class="scrim"><div class="win dialog" role="dialog" aria-modal="true" aria-label="New profile"><header><h2>New profile</h2></header><div class="body">' +
+      '<div class="grid2"><label class="field">Job<select id="np-job" data-c="np-job">' + '<option value="">Other</option>' + D.JOBS.map(j => '<option value="' + j[0] + '"' + (d.job === j[0] ? ' selected' : '') + '>' + j[0] + ' · ' + j[1] + '</option>').join('') + '</select></label>' +
+      '<label class="field">Profile name<input type="text" id="np-name" value="' + esc(d.name) + '" data-dlg="name"></label></div>' +
+      '<div class="col-title" style="margin:0">Starting point</div><div class="tmpl-grid">' + D.TEMPLATES.map(t => '<button class="tmpl" data-a="np-tmpl" data-id="' + t[0] + '" aria-pressed="' + (d.tmpl === t[0]) + '"><b>' + t[1] + '</b><small>' + t[2] + '</small></button>').join('') + '</div></div>' +
+      '<footer><button class="btn" data-a="close-dialog">Cancel</button><button class="btn primary" data-a="np-create">Create profile</button></footer></div></div>';
+  }
+  if (d.type === 'import') {
+    return '<div class="scrim"><div class="win dialog" role="dialog" aria-modal="true" aria-label="Import Lua"><header><h2>Import a LuAshitacast profile</h2></header><div class="body">' +
+      '<p class="hint">Choose your <code>.lua</code> profile, or paste it below. Gear sets and simple if-rules become visual items. Anything else is kept as custom Lua so nothing is lost.</p>' +
+      '<div class="btn-row"><button class="btn" data-a="pick-lua-file">Choose a .lua file…</button><span class="hint small" style="align-self:center">' + esc(d.fileName || '') + '</span></div>' +
+      '<textarea id="imp-text" rows="10" spellcheck="false" placeholder="Or paste Lua here" data-dlg="text">' + esc(d.text || '') + '</textarea>' +
+      '<div class="grid2"><label class="field">Profile name<input type="text" data-dlg="name" value="' + esc(d.name || '') + '" placeholder="Taken from the file name"></label>' +
+      '<label class="field">Job<select data-dlg="job"><option value="">Other</option>' + D.JOBS.map(j => '<option value="' + j[0] + '"' + (d.job === j[0] ? ' selected' : '') + '>' + j[0] + '</option>').join('') + '</select></label></div>' +
+      (d.error ? '<p class="err-text">' + esc(d.error) + '</p>' : '') + '</div>' +
+      '<footer><button class="btn" data-a="close-dialog">Cancel</button><button class="btn primary" data-a="do-import">Import</button></footer></div></div>';
+  }
+  if (d.type === 'text') {
+    return '<div class="scrim"><div class="win dialog" role="dialog" aria-modal="true" aria-label="' + esc(d.title) + '"><header><h2>' + esc(d.title) + '</h2></header><div class="body">' +
+      '<p class="hint">' + esc(d.help || 'Saving a file is not available here. Copy the text and save it as ' + d.filename + '.') + '</p>' +
+      '<textarea id="out-text" rows="14" readonly spellcheck="false">' + esc(d.text) + '</textarea></div>' +
+      '<footer><button class="btn" data-a="close-dialog">Close</button><button class="btn primary" data-a="copy-dialog">Copy all</button></footer></div></div>';
+  }
+  return '';
+}
+
+/* ---------------- main render ---------------- */
+const DATALISTS = '<datalist id="dl-spells">' + D.suggestFor('HandleMidcast').map(x => '<option value="' + esc(x) + '">').join('') + '</datalist>' +
+  '<datalist id="dl-abilities">' + D.suggestFor('HandleAbility').map(x => '<option value="' + esc(x) + '">').join('') + '</datalist>' +
+  '<datalist id="dl-weaponskills">' + D.suggestFor('HandleWeaponskill').map(x => '<option value="' + esc(x) + '">').join('') + '</datalist>' +
+  '<datalist id="dl-buffs">' + ['Haste', 'Slow', 'Refresh', 'Protect', 'Shell', 'Stoneskin', 'Blink', 'Reraise', 'Copy Image', 'Sneak Attack', 'Silence', 'Paralysis', 'Doom', 'Weakness', 'Sleep', 'Poison', 'Chainspell', 'Elemental Seal'].map(x => '<option value="' + x + '">').join('') + '</datalist>';
+
+function render() {
+  ensureSelection();
+  const scrollY = window.scrollY;
+  let view = '';
+  if (ui.tab === 'sets') view = setsTab();
+  else if (ui.tab === 'rules') view = rulesTab();
+  else if (ui.tab === 'profile') view = profileTab();
+  else view = luaTab();
+  $('#app').innerHTML = '<div class="wrap">' + headerHtml() + '<div class="tabs" id="tabs" role="tablist">' + tabsHtml() + '</div><main id="view">' + view + '</main>' +
+    '<p class="hint small" style="margin-top:24px" id="savestate">' + saveText() + '</p></div>' + DATALISTS + '<div id="dialog">' + dialogHtml() + '</div><div id="toast"></div>';
+  renderToast();
+  window.scrollTo(0, scrollY);
+  if (ui.focusSearch) { ui.focusSearch = false; const el = $('#itemsearch'); if (el) { el.focus(); } const ins = $('#inspector'); if (ins && window.innerWidth <= 1080) ins.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  if (ui.flash) { const el = $('#rule-' + ui.flash); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); ui.flash = null; }
+}
+function refreshDerived() {
+  const p = prof();
+  document.querySelectorAll('[data-eng]').forEach(el => { const r = p.rules.find(x => x.id === el.dataset.eng); if (r) el.innerHTML = engHtml(r, p); });
+  const sl = $('#setlist'); if (sl) sl.innerHTML = setListHtml(p);
+  const s = curSet();
+  const dl = $('#doll'); if (dl && s) { const crest = dl.querySelector('.doll-crest'); dl.innerHTML = (crest ? crest.outerHTML : '') + dollHtml(s); }
+  const tb = $('#tabs'); if (tb) tb.innerHTML = tabsHtml();
+  save();
+}
+
+/* ---------------- data binding ---------------- */
+function nodeAt(r, path) {
+  let n = r.when;
+  if (path === '' || path == null) return n;
+  const idx = String(path).split('.').map(Number);
+  for (let i = 0; i < idx.length; i++) n = n.children[idx[i]];
+  return n;
+}
+function parentAt(r, path) {
+  const idx = String(path).split('.').map(Number);
+  const last = idx.pop();
+  let n = r.when;
+  idx.forEach(i => { n = n.children[i]; });
+  return { parent: n, index: last };
+}
+function resolve(bind) {
+  const a = bind.split('|'), p = prof();
+  const rule = id => p.rules.find(r => r.id === id);
+  switch (a[0]) {
+    case 'proj': return { o: project, k: a[1] };
+    case 'prof': return { o: p, k: a[1] };
+    case 'psetting': return { o: p.settings, k: a[1] };
+    case 'raw': return { o: p.raw, k: a[1] };
+    case 'set': return { o: p.sets.find(s => s.id === a[1]), k: a[2] };
+    case 'item': { const s = p.sets.find(x => x.id === a[1]); return { o: s && s.slots[a[2]], k: a[3] }; }
+    case 'rule': return { o: rule(a[1]), k: a[2] };
+    case 'grp': return { o: nodeAt(rule(a[1]), a[2]), k: 'op' };
+    case 'cond': return { o: nodeAt(rule(a[1]), a[2]), k: a[3] };
+    case 'act': return { o: rule(a[1]).actions[Number(a[2])], k: a[3] };
+    case 'var': return { o: p.variables.find(v => v.id === a[1]), k: a[2], v: true };
+    case 'cmd': return { o: p.commands.find(c => c.id === a[1]), k: a[2] };
+  }
+  return { o: null };
+}
+function applyBind(el) {
+  const r = resolve(el.dataset.bind);
+  if (!r.o) return;
+  let val;
+  if (el.type === 'checkbox') val = el.checked;
+  else if (r.k === 'augments') val = el.value.split('\n').map(x => x.trim()).filter(Boolean);
+  else if (r.k === 'options') val = el.value.split(',').map(x => x.trim()).filter(Boolean);
+  else if (el.type === 'number') val = el.value === '' ? 0 : Number(el.value);
+  else val = el.value;
+  r.o[r.k] = val;
+  if (r.v && r.k === 'options' && r.o.options.indexOf(r.o.value) < 0) r.o.value = r.o.options[0] || '';
+  const cc = el.dataset.bind.split('|');
+  if (cc[0] === 'cond' && cc[3] === 'varId') { const v = C.findVar(prof(), val); r.o.value = v ? (v.options[0] || '') : ''; }
+  if (cc[0] === 'act' && cc[3] === 'setId') { delete r.o.setName; }
+}
+
+/* ---------------- actions ---------------- */
+function newSetAction() {
+  const p = prof();
+  const s = C.newSet(uniqueName('NewSet', p.sets.map(x => x.name)));
+  p.sets.push(s); ui.setId = s.id; ui.tab = 'sets'; save(); render();
+}
+function pickItem(name) {
+  const s = curSet(); if (!s) return;
+  const old = s.slots[ui.slot];
+  if (old && !old.raw && old.name === name) { return; }
+  s.slots[ui.slot] = C.newItem(name);
+  ui.search = '';
+  save(); render();
+}
+function moveRule(id, dir) {
+  const p = prof();
+  const r = p.rules.find(x => x.id === id);
+  const sib = p.rules.filter(x => x.handler === r.handler);
+  const j = sib.indexOf(r) + dir;
+  if (j < 0 || j >= sib.length) return;
+  const a = p.rules.indexOf(r), b = p.rules.indexOf(sib[j]);
+  p.rules[a] = sib[j]; p.rules[b] = r;
+  save(); render();
+}
+function defaultAction(p) { return p.sets[0] ? { type: 'equipSet', setId: p.sets[0].id } : C.newAction('equipSet'); }
+
+async function saveFile(filename, text, label, help) {
+  if (downloads) {
+    try { await downloads.save({ filename, data: text }); toast(label + ' saved as ' + filename); return; }
+    catch (e) { if (e && e.code === 'declined') return; }
+  }
+  ui.dialog = { type: 'text', title: label, text, filename, help }; render();
+}
+function copyText(text) {
+  const done = () => toast('Copied to the clipboard');
+  const fallback = () => { const ta = $('#out-text') || $('.lua'); if (ta && ta.select) { ta.select(); } toast('Select the text and copy it with your keyboard'); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+function exportLua() {
+  const p = prof();
+  const errs = C.validate(p).filter(i => i.sev === 'error').length;
+  const name = (p.job || p.name || 'profile').replace(/[^\w-]+/g, '_');
+  saveFile(name + '.lua.txt', C.generateLua(p), 'Lua file', 'Saving as .lua is not possible from this page, so the file is saved as ' + name + '.lua.txt. Rename it to ' + name + '.lua before putting it in your LuAshitacast folder.');
+  if (errs) toast('Exported, but ' + errs + ' problem' + (errs > 1 ? 's' : '') + ' should be fixed first. See Lua & Checks.');
+}
+function replaceProject(next, msg) {
+  const before = JSON.stringify(project);
+  project = next; ui.profileId = null; ui.setId = null; ui.tab = 'sets';
+  save(); render();
+  toast(msg, () => { project = C.normaliseProject(JSON.parse(before)); ui.profileId = null; ui.setId = null; save(); render(); });
+}
+
+function doImport() {
+  const d = ui.dialog;
+  if (!(d.text || '').trim()) { d.error = 'Paste your Lua or choose a file first.'; render(); return; }
+  let job = d.job || '';
+  const base = (d.fileName || '').replace(/\.lua(\.txt)?$/i, '');
+  if (!job && C.JOB_ABBRS.indexOf(base.toUpperCase()) >= 0) job = base.toUpperCase();
+  const name = (d.name || '').trim() || base || job || 'Imported';
+  try {
+    const p = C.importLua(d.text, { name, job, fileName: d.fileName });
+    project.profiles.push(p);
+    ui.profileId = p.id; ui.setId = null; ui.tab = 'lua'; ui.dialog = null;
+    save(); render();
+    toast('Imported ' + p.sets.length + ' sets and ' + p.rules.length + ' rules');
+  } catch (e) {
+    d.error = e.name === 'LuaSyntaxError' ? 'This does not look like valid Lua: ' + e.message + (e.line ? ' (line ' + e.line + ')' : '') + '. Fix it in a text editor and try again.' : 'Could not import this file: ' + e.message;
+    render();
+  }
+}
+
+function onClick(e) {
+  const el = e.target.closest('[data-a]');
+  if (!el) return;
+  const a = el.dataset.a, p = prof();
+  switch (a) {
+    case 'tab': ui.tab = el.dataset.tab; render(); break;
+    case 'handler': ui.handler = el.dataset.id; render(); break;
+    case 'pick-set': ui.setId = el.dataset.id; render(); break;
+    case 'new-set': newSetAction(); break;
+    case 'dup-set': { const s = curSet(); if (!s) break; const c = C.clone(s); c.id = C.uid('set'); c.name = uniqueName(s.name + '_Copy', p.sets.map(x => x.name)); p.sets.splice(p.sets.indexOf(s) + 1, 0, c); ui.setId = c.id; save(); render(); break; }
+    case 'slot': ui.slot = el.dataset.slot; ui.search = ''; ui.focusSearch = true; render(); break;
+    case 'pick-item': pickItem(el.dataset.name); break;
+    case 'clear-slot': { const s = curSet(); if (s) { delete s.slots[ui.slot]; save(); render(); } break; }
+    case 'del': {
+      const [kind, id] = el.dataset.key.split(':');
+      arm(el.dataset.key, () => {
+        if (kind === 'set') { const i = p.sets.findIndex(s => s.id === id); p.sets.splice(i, 1); ui.setId = null; toast('Set deleted. Rules that used it now show a problem in Lua & Checks.'); }
+        else if (kind === 'rule') p.rules = p.rules.filter(r => r.id !== id);
+        else if (kind === 'var') p.variables = p.variables.filter(v => v.id !== id);
+        else if (kind === 'cmd') p.commands = p.commands.filter(c => c.id !== id);
+        else if (kind === 'prof') { project.profiles = project.profiles.filter(x => x.id !== id); ui.profileId = null; ui.setId = null; }
+        save(); render();
+      });
+      break;
+    }
+    case 'rule-add': { const r = C.newRule(ui.handler); r.actions.push(defaultAction(p)); p.rules.push(r); ui.flash = r.id; save(); render(); break; }
+    case 'raw-add': { p.rules.push(C.newRawRule(ui.handler, '-- your Lua here')); save(); render(); break; }
+    case 'rule-up': moveRule(el.dataset.id, -1); break;
+    case 'rule-down': moveRule(el.dataset.id, 1); break;
+    case 'rule-dup': { const r = p.rules.find(x => x.id === el.dataset.id); const c = C.clone(r); c.id = C.uid('rule'); c.name = r.name ? r.name + ' copy' : ''; p.rules.splice(p.rules.indexOf(r) + 1, 0, c); ui.flash = c.id; save(); render(); break; }
+    case 'cond-add': { const r = p.rules.find(x => x.id === el.dataset.rule); const g = nodeAt(r, el.dataset.path); const h = C.HANDLERS.find(x => x.id === r.handler); g.children.push(C.newCond(h.action ? 'action.name' : 'player.status')); save(); render(); break; }
+    case 'grp-add': { const r = p.rules.find(x => x.id === el.dataset.rule); const g = nodeAt(r, el.dataset.path); const ng = C.emptyGroup('OR'); ng.children.push(C.newCond(C.HANDLERS.find(x => x.id === r.handler).action ? 'action.name' : 'player.status')); g.children.push(ng); save(); render(); break; }
+    case 'grp-toggle': { const r = p.rules.find(x => x.id === el.dataset.rule); const g = nodeAt(r, el.dataset.path); g.op = g.op === 'OR' ? 'AND' : 'OR'; save(); render(); break; }
+    case 'cond-del': case 'grp-del': { const r = p.rules.find(x => x.id === el.dataset.rule); const pp = parentAt(r, el.dataset.path); pp.parent.children.splice(pp.index, 1); save(); render(); break; }
+    case 'act-add': { const r = p.rules.find(x => x.id === el.dataset.rule); r.actions.push(defaultAction(p)); save(); render(); break; }
+    case 'act-del': { const r = p.rules.find(x => x.id === el.dataset.rule); r.actions.splice(Number(el.dataset.idx), 1); save(); render(); break; }
+    case 'var-add': { p.variables.push({ id: C.uid('var'), name: uniqueName('Mode', p.variables.map(v => v.name)), options: ['Normal', 'Alt'], value: 'Normal' }); save(); render(); break; }
+    case 'cmd-add': { p.commands.push({ id: C.uid('cmd'), name: '', kind: 'cycle', varId: p.variables[0] ? p.variables[0].id : '' }); save(); render(); break; }
+    case 'new-profile': ui.dialog = { type: 'new-profile', job: 'WAR', name: 'WAR', tmpl: D.defaultTemplate('WAR') }; render(); break;
+    case 'np-tmpl': ui.dialog.tmpl = el.dataset.id; syncDialogFields(); render(); break;
+    case 'np-create': { const d = ui.dialog; const np = D.makeProfile(d.job, d.tmpl, (d.name || '').trim() || d.job || 'Profile'); project.profiles.push(np); ui.profileId = np.id; ui.setId = null; ui.tab = 'sets'; ui.dialog = null; save(); render(); break; }
+    case 'open-import': ui.dialog = { type: 'import', text: '', name: '', job: '', fileName: '', error: '' }; render(); break;
+    case 'pick-lua-file': pickFile('.lua,.txt,text/plain', txt => { ui.dialog.text = txt.text; ui.dialog.fileName = txt.name; render(); }); break;
+    case 'do-import': syncDialogFields(); doImport(); break;
+    case 'close-dialog': ui.dialog = null; render(); break;
+    case 'copy-dialog': copyText(ui.dialog.text); break;
+    case 'open-project': pickFile('.json,application/json', txt => {
+      try { replaceProject(C.normaliseProject(JSON.parse(txt.text)), 'Opened ' + txt.name); }
+      catch (err) { toast('Could not open this file: ' + err.message); }
+    }); break;
+    case 'save-project': project.savedAt = Date.now(); saveFile((project.name || 'gear-project').replace(/[^\w-]+/g, '_') + '.json', JSON.stringify(project, null, 2), 'Project file', 'Copy this text into a file ending in .json. You can open it again with Open project.'); break;
+    case 'export-lua': exportLua(); break;
+    case 'copy-lua': copyText(C.generateLua(p)); break;
+    case 'dismiss-report': p.importReport = null; save(); render(); break;
+    case 'goto-rule': { const r = p.rules.find(x => x.id === el.dataset.id); if (r) { ui.tab = 'rules'; ui.handler = r.handler; ui.flash = r.id; render(); } break; }
+    case 'goto-issue': {
+      const i = lastIssues[Number(el.dataset.n)]; if (!i) break;
+      ui.tab = i.ref.tab;
+      if (i.ref.handler) ui.handler = i.ref.handler;
+      if (i.ref.ruleId) ui.flash = i.ref.ruleId;
+      if (i.ref.setId) ui.setId = i.ref.setId;
+      render(); break;
+    }
+    case 'toast-undo': { const f = ui.toast && ui.toast.undoFn; ui.toast = null; if (f) f(); renderToast(); break; }
+  }
+}
+function syncDialogFields() {
+  const d = ui.dialog; if (!d) return;
+  document.querySelectorAll('[data-dlg]').forEach(el => { d[el.dataset.dlg] = el.value; });
+}
+function pickFile(accept, cb) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = accept; inp.className = 'hidden-input';
+  inp.addEventListener('change', () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => cb({ name: f.name, text: String(rd.result) });
+    rd.onerror = () => toast('Could not read that file');
+    rd.readAsText(f);
+  });
+  document.body.appendChild(inp); inp.click();
+  setTimeout(() => inp.remove(), 60000);
+}
+
+function onChange(e) {
+  const el = e.target;
+  if (el.dataset.bind) {
+    applyBind(el);
+    if (el.dataset.render) { save(); render(); } else refreshDerived();
+    return;
+  }
+  const c = el.dataset.c, p = prof();
+  if (!c) { if (el.dataset.dlg && ui.dialog) ui.dialog[el.dataset.dlg] = el.value; return; }
+  switch (c) {
+    case 'profile': ui.profileId = el.value; ui.setId = null; render(); break;
+    case 'np-job': { const d = ui.dialog; const old = d.job; d.job = el.value; if (!d.name || d.name === old) d.name = el.value || d.name; d.tmpl = D.defaultTemplate(el.value); render(); break; }
+    case 'cond-kind': { const r = p.rules.find(x => x.id === el.dataset.rule); const pp = parentAt(r, el.dataset.path); pp.parent.children[pp.index] = C.newCond(el.value); save(); render(); break; }
+    case 'act-type': { const r = p.rules.find(x => x.id === el.dataset.rule); const i = Number(el.dataset.idx); const na = C.newAction(el.value); if (na.type === 'equipSet' && p.sets[0]) na.setId = p.sets[0].id; r.actions[i] = na; save(); render(); break; }
+    case 'cmd-kind': { const cm = p.commands.find(x => x.id === el.dataset.id); cm.kind = el.value; if ((cm.kind === 'cycle' || cm.kind === 'set') && !cm.varId && p.variables[0]) cm.varId = p.variables[0].id; if (cm.kind === 'lock' && !cm.setId && p.sets[0]) cm.setId = p.sets[0].id; save(); render(); break; }
+  }
+}
+function onInput(e) {
+  const el = e.target;
+  if (el.tagName === 'SELECT' || el.type === 'checkbox') return;
+  if (el.dataset.bind) { applyBind(el); refreshDerived(); return; }
+  if (el.dataset.search) { ui.search = el.value; const r = $('#results'); if (r) r.innerHTML = resultsHtml(); return; }
+  if (el.dataset.dlg && ui.dialog) ui.dialog[el.dataset.dlg] = el.value;
+}
+function onKey(e) {
+  if (e.key === 'Enter' && e.target.dataset && e.target.dataset.enter) {
+    const first = $('#results .result');
+    if (first) { e.preventDefault(); first.click(); }
+  }
+  if (e.key === 'Escape' && ui.dialog) { ui.dialog = null; render(); }
+}
+
+/* ---------------- boot ---------------- */
+function boot() {
+  project = loadProject();
+  ensureSelection();
+  const root = $('#app');
+  root.addEventListener('click', onClick);
+  root.addEventListener('change', onChange);
+  root.addEventListener('input', onInput);
+  root.addEventListener('keydown', onKey);
+  render();
+  window.addEventListener('pagehide', flushSave);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
+  try {
+    if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { downloads = d; }, () => {});
+  } catch (e) { /* no capability */ }
+  try { localStorage.setItem(KEY + ':probe', '1'); localStorage.removeItem(KEY + ':probe'); } catch (e) { storageOK = false; const s = $('#savestate'); if (s) s.textContent = saveText(); }
+}
+window.addEventListener('DOMContentLoaded', boot);
+})();
+
+</script>
+
+</body></html>
