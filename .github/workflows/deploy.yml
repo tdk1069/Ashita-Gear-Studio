@@ -8,14 +8,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      # No lock file is committed yet. After running `npm install` locally, commit package-lock.json,
+      # then switch this to `npm ci` and add `cache: npm` above for faster, reproducible builds.
+      - run: npm install
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with: { path: dist }
   deploy:
     needs: build
