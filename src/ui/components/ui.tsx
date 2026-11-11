@@ -28,7 +28,7 @@ export function Btn({ children, onClick, variant = 'default', small, disabled, t
 export const IconBtn = (p: Omit<BtnProps, 'small' | 'variant'> & { label: string }): ReactElement => <Btn {...p} variant="ghost" className={cx('icon-btn', p.className)} />;
 
 /** A delete button that asks for a second click before acting. */
-export function ConfirmBtn({ label = 'Delete', onConfirm, small = true }: { label?: string; onConfirm: () => void; small?: boolean }): ReactElement {
+export function ConfirmBtn({ label = 'Delete', armedLabel = 'Click again to delete', onConfirm, small = true }: { label?: string; armedLabel?: string; onConfirm: () => void; small?: boolean }): ReactElement {
   const [armed, setArmed] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
@@ -37,7 +37,7 @@ export function ConfirmBtn({ label = 'Delete', onConfirm, small = true }: { labe
       if (armed) { setArmed(false); onConfirm(); return; }
       setArmed(true);
       t.current = setTimeout(() => setArmed(false), 3000);
-    }}>{armed ? 'Click again to delete' : label}</button>
+    }}>{armed ? armedLabel : label}</button>
   );
 }
 

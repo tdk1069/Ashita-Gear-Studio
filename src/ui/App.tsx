@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { ReactElement } from 'react';
-import { Badge, Btn, cx } from './components/ui';
+import { Badge, Btn, ConfirmBtn, cx } from './components/ui';
+import { makeProfile } from '../data/templates';
 import { Dialogs, openProjectFile } from './Dialogs';
 import { pickFiles, safeName, saveText } from './files';
 import { GearSetsView } from './views/GearSets';
@@ -8,7 +9,7 @@ import { LuaView, exportLua, useIssues } from './views/LuaView';
 import { ProfileView } from './views/ProfileView';
 import { RulesView } from './views/Rules';
 import type { Tab } from './store';
-import { boot, mutate, redo, setState, toast, undo, useProfile, useStore } from './store';
+import { boot, mutate, redo, replaceProject, setState, toast, undo, useProfile, useStore } from './store';
 
 const CRYSTAL = (
   <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
@@ -37,6 +38,7 @@ function Header(): ReactElement {
         <Btn small variant="ghost" label="Redo" title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={redo}>↷ Redo</Btn>
       </div>
       <div className="bar-end">
+        <ConfirmBtn small label="New project" armedLabel="Click again to clear everything" onConfirm={() => { replaceProject({ schema: 1, name: 'My Gear Project', profiles: [makeProfile('', 'blank', 'Profile')] }); toast('Started a new empty project', true); }} />
         <Btn small onClick={() => setState({ dialog: { type: 'gamedata', busy: false, message: '', error: '' } })}>Game data</Btn>
         <Btn small onClick={() => setState({ dialog: { type: 'import', text: '', fileName: '', name: '', job: '', error: '' } })}>Import Lua</Btn>
         <Btn small onClick={async () => { const [f] = await pickFiles('.json,application/json'); if (f) openProjectFile(f.text, f.name); }}>Open project</Btn>
