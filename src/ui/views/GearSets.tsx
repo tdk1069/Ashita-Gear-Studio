@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { AugPath, GearSet, ItemEntry, Profile, SlotName } from '../../core';
 import { BAGS, SLOT_NAMES, clone, itemExpr, newItem, newSet, ruleTitle, handlerInfo } from '../../core';
-import { Btn, ConfirmBtn, Field, Select, TextArea, TextInput, Window, cx } from '../components/ui';
-import { mutateProfile, setState, useProfile, useStore } from '../store';
+import { Btn, ConfirmBtn, Field, Icon, Select, TextArea, TextInput, Window, cx } from '../components/ui';
+import { mutateProfile, setNameMode, setState, useProfile, useStore } from '../store';
 
 function uniqueName(base: string, names: string[]): string {
   const low = names.map(n => n.toLowerCase());
@@ -68,13 +68,14 @@ function SetList({ p }: { p: Profile }): ReactElement {
 
 function SlotTile({ set, slot, active }: { set: GearSet; slot: SlotName; active: boolean }): ReactElement {
   const game = useStore(s => s.game);
+  const atlas = useStore(s => s.icons.items);
   const it = set.slots[slot];
   const has = !!itemExpr(it);
   const unknown = has && it && !it.raw && !game.isStarter && !game.has(slot, it.name);
   return (
     <button type="button" className={cx('slot', has && 'filled')} aria-pressed={active} onClick={() => setState({ slot })}>
       <span className="sl"><span>{slot}</span><i className="gem" /></span>
-      <span className="item">{has ? (it!.raw ?? it!.name) : <span className="empty">Empty</span>}</span>
+      <span className="item">{has && !it!.raw && <Icon atlas={atlas} cell={game.lookup(it!.name)?.icon} size={24} />}{has ? <span>{it!.raw ?? it!.name}</span> : <span className="empty">Empty</span>}</span>
       <span className="meta">
         {it?.raw && <span className="tag raw">Custom Lua</span>}
         {it && !it.raw && (it.augPath || it.augments.some(Boolean) || it.augRank != null || it.augTrial != null) && (
@@ -126,6 +127,8 @@ function PaperDoll({ p }: { p: Profile }): ReactElement {
 function ItemPicker({ set, slot }: { set: GearSet; slot: SlotName }): ReactElement {
   const game = useStore(s => s.game);
   const loading = useStore(s => s.gameLoading);
+  const atlas = useStore(s => s.icons.items);
+  const nameMode = useStore(s => s.nameMode);
   const [query, setQuery] = useState('');
   const [maxLevel, setMaxLevel] = useState('');
   const [cursor, setCursor] = useState(0);
@@ -136,9 +139,11 @@ function ItemPicker({ set, slot }: { set: GearSet; slot: SlotName }): ReactEleme
   const { hits, total } = useMemo(() => game.search(slot, { query, maxLevel: Number.isFinite(lvl) ? lvl : undefined, limit: 80 }), [game, slot, query, lvl]);
   const typed = query.trim();
   const showTyped = typed !== '' && !hits.some(h => h.name.toLowerCase() === typed.toLowerCase());
-  const rows: { name: string; level: number; typed?: boolean }[] = [...hits, ...(showTyped ? [{ name: typed, level: 0, typed: true }] : [])];
+  const rows: { name: string; level: number; long?: string; icon?: number; typed?: boolean }[] = [...hits, ...(showTyped ? [{ name: typed, level: 0, typed: true }] : [])];
 
   const choose = (name: string): void => {
+    const hit = hits.find(h => h.name === name);
+    if (hit && nameMode === 'long' && hit.long) name = hit.long;
     mutateProfile(pr => { const s = pr.sets.find(x => x.id === set.id); if (s) s.slots[slot] = newItem(name); });
     setQuery(''); setCursor(0);
   };
@@ -156,12 +161,15 @@ function ItemPicker({ set, slot }: { set: GearSet; slot: SlotName }): ReactEleme
         </Field>
         <Field label="Max level"><input type="number" min={1} max={99} className="w-[5.2rem]" placeholder="Any" value={maxLevel} onChange={e => { setMaxLevel(e.target.value); setCursor(0); }} /></Field>
       </div>
+      {hits.some(h => h.long && h.long !== h.name) && (
+        <p className="hint small">Write item names as: <button type="button" className="linkbtn" aria-pressed={nameMode === 'short'} onClick={() => setNameMode('short')}>{nameMode === 'short' ? '● ' : ''}in-game short name</button> · <button type="button" className="linkbtn" aria-pressed={nameMode === 'long'} onClick={() => setNameMode('long')}>{nameMode === 'long' ? '● ' : ''}full name</button></p>
+      )}
       {game.isStarter && loading && <p className="hint small">Loading the full item list…</p>}
       {game.isStarter && !loading && <p className="hint small">Only a small sample list is loaded. <button type="button" className="linkbtn" onClick={() => setState({ dialog: { type: 'gamedata', busy: false, message: '', error: '' } })}>Load the full item list</button></p>}
         <div className="results" id="item-results" role="listbox" ref={list}>
         {rows.map((r, i) => (
           <button key={(r.typed ? 'typed:' : '') + r.name} type="button" role="option" aria-selected={i === cursor} className={cx('result', r.typed && 'custom')} onMouseEnter={() => setCursor(i)} onClick={() => choose(r.name)}>
-            {r.typed ? <>Use “{r.name}” as typed</> : <><span>{r.name}</span>{r.level > 0 && <span className="lv">Lv {r.level}</span>}</>}
+            {r.typed ? <>Use “{r.name}” as typed</> : <><span className="nm"><Icon atlas={atlas} cell={r.icon} size={24} /><span>{r.name}{r.long && r.long !== r.name && <span className="full">{r.long}</span>}</span></span>{r.level > 0 && <span className="lv">Lv {r.level}</span>}</>}
           </button>
         ))}
         {!rows.length && <p className="hint p-2.5">{game.count(slot) ? 'Nothing matches. Clear the search or raise the level.' : 'No items for this slot. Type a name above.'}</p>}

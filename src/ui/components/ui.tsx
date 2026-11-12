@@ -110,3 +110,12 @@ export function Dialog({ title, onClose, children, footer }: { title: string; on
     </div>
   );
 }
+
+/** One icon from a sprite sheet. Renders nothing when the icon or sheet is missing. */
+export function Icon({ atlas, cell, size = 24 }: { atlas: { url: string; cell: number; cols: number } | null; cell: number | undefined; size?: number }): ReactElement | null {
+  if (!atlas || cell === undefined || cell < 0) return null;
+  const k = size / atlas.cell;
+  return (
+    <span aria-hidden="true" className="icon" style={{ width: size, height: size, backgroundImage: `url(${atlas.url})`, backgroundSize: `${atlas.cols * size}px auto`, backgroundPosition: `-${(cell % atlas.cols) * size}px -${Math.floor(cell / atlas.cols) * size}px`, imageRendering: k === 1 ? 'auto' : 'pixelated' }} />
+  );
+}

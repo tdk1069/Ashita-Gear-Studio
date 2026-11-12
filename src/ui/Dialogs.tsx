@@ -85,7 +85,7 @@ function GameDataDialog({ d }: { d: Of<'gamedata'> }): ReactElement {
       <div className="row-item">
         {game.isStarter
           ? <p><b>Using the built-in sample list</b> ({game.itemCount} items). Load the game’s resource files to search every piece of equipment.</p>
-          : <p><b>{game.itemCount.toLocaleString()} items</b>, {game.data.spells.length.toLocaleString()} spells, {game.data.abilities.length.toLocaleString()} abilities, {game.data.weaponskills.length.toLocaleString()} weaponskills, {game.data.buffs.length.toLocaleString()} status effects. Source: {game.data.origin === 'bundled' ? 'bundled with the site (resources folder)' : game.data.source}.</p>}
+          : <p><b>{game.itemCount.toLocaleString()} items</b>, {game.data.spells.length.toLocaleString()} spells, {game.data.abilities.length.toLocaleString()} abilities, {game.data.weaponskills.length.toLocaleString()} weaponskills, {game.data.buffs.length.toLocaleString()} status effects. Source: {game.data.origin === 'bundled' ? 'bundled with the site (resources folder)' : game.data.source}.{game.data.icons?.items ? ' Item icons: yes.' : ''}</p>}
       </div>
       {note && <p className="hint small">{note}</p>}
       <p className="hint">Choose <code>items.lua</code> from the <a href="https://github.com/Windower/Resources/tree/master/resources_data" target="_blank" rel="noreferrer">Windower Resources</a> project. You can pick several files at once: <code>spells.lua</code>, <code>job_abilities.lua</code>, <code>weapon_skills.lua</code> and <code>buffs.lua</code> fill the suggestion lists in the rule builder. Files you load here replace the bundled ones on this device only, and you can remove them to go back to the bundled set.</p>

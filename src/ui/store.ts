@@ -7,8 +7,20 @@ import { sampleProject } from '../data/templates';
 import type { TemplateId } from '../data/templates';
 import { GameIndex, starterIndex } from '../data/gamedata';
 import { buildGameData } from '../data/windower';
-import type { GameData, LoadedFile } from '../data/windower';
+import type { GameData, IconSets, LoadedFile } from '../data/windower';
 import { kvDelete, kvGet, kvSet, persistent } from '../storage/kv';
+
+/** A sprite sheet of 32x32 icons: cell n sits at column n % cols, row floor(n / cols). */
+export interface Atlas { url: string; cell: number; cols: number }
+export interface Icons { items: Atlas | null; buffs: Atlas | null }
+
+function readNameMode(): 'short' | 'long' {
+  try { return localStorage.getItem('ags-namemode') === 'long' ? 'long' : 'short'; } catch { return 'short'; }
+}
+export function setNameMode(m: 'short' | 'long'): void {
+  try { localStorage.setItem('ags-namemode', m); } catch { /* ignore */ }
+  setState({ nameMode: m });
+}
 
 export type Tab = 'sets' | 'rules' | 'profile' | 'lua';
 export type SaveState = 'saved' | 'saving' | 'unavailable';
@@ -34,6 +46,8 @@ export interface State {
   canRedo: boolean;
   save: SaveState;
   game: GameIndex;
+  icons: Icons;
+  nameMode: 'short' | 'long';
   gameLoading: boolean;
   /** What the bundled-data loader found, shown in the Game data dialog. */
   gameNote: string;
@@ -44,7 +58,7 @@ const GAME_KEY = 'gamedata';
 const BUNDLED_KEY = 'gamedata-bundled';
 const LEGACY_KEY = 'ags:project:v1';
 /** Windower resource files looked for in ./resources/ (public/resources in the repo). Missing files are skipped. */
-export const BUNDLED_FILES: readonly (readonly string[])[] = [['items.lua'], ['spells.lua'], ['job_abilities.lua'], ['weapon_skills.lua', 'weapon_skill.lua'], ['buffs.lua']];
+export const BUNDLED_FILES: readonly (readonly string[])[] = [['items.lua'], ['spells.lua'], ['job_abilities.lua'], ['weapon_skills.lua', 'weapon_skill.lua'], ['buffs.lua'], ['gamedata.json']];
 
 /** Folder holding the resources, next to the page. Works whether or not the page URL ends in a slash (GitHub Pages project sites). */
 function resourcesUrl(): string {
@@ -60,7 +74,7 @@ let state: State = {
   project: sampleProject(),
   profileId: '', setId: null, slot: 'Head', tab: 'sets', handler: 'HandleDefault',
   flash: null, dialog: null, toast: null, canUndo: false, canRedo: false, save: 'saved',
-  game: starterIndex(), gameLoading: false, gameNote: '',
+  game: starterIndex(), icons: { items: null, buffs: null }, nameMode: readNameMode(), gameLoading: false, gameNote: '',
 };
 state.profileId = state.project.profiles[0]!.id;
 state.setId = state.project.profiles[0]!.sets[0]?.id ?? null;
@@ -169,6 +183,12 @@ export async function installGameData(files: LoadedFile[]): Promise<string[]> {
     abilities: data.abilities.length ? data.abilities : prev.abilities,
     weaponskills: data.weaponskills.length ? data.weaponskills : prev.weaponskills,
     buffs: data.buffs.length ? data.buffs : prev.buffs,
+    // icon cells only mean something together with the items they were extracted with
+    icons: data.items.length ? data.icons : prev.icons,
+    spellInfo: data.spells.length ? data.spellInfo : prev.spellInfo,
+    abilityInfo: data.abilities.length ? data.abilityInfo : prev.abilityInfo,
+    weaponskillInfo: data.weaponskills.length ? data.weaponskillInfo : prev.weaponskillInfo,
+    buffInfo: data.buffs.length ? data.buffInfo : prev.buffInfo,
     source: [prev.origin === 'bundled' ? 'bundled resources' : prev.source, data.source].filter(Boolean).join(' + '),
     origin: 'user' as const,
   } : { ...data, origin: 'user' as const };
@@ -183,6 +203,20 @@ export async function removeGameData(): Promise<void> {
   setState({ game: starterIndex() });
   await loadBundledGameData();
 }
+async function loadAtlas(base: string, name: string | undefined): Promise<Atlas | null> {
+  if (!name) return null;
+  try {
+    const r = await fetch(`${base}${name}.json`, { cache: 'no-cache' });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { cell?: number; cols?: number };
+    return { url: `${base}${name}.png`, cell: j.cell ?? 32, cols: j.cols ?? 64 };
+  } catch { return null; }
+}
+async function applyIcons(base: string, sets: IconSets | undefined): Promise<void> {
+  const [items, buffs] = await Promise.all([loadAtlas(base, sets?.items), loadAtlas(base, sets?.buffs)]);
+  setState({ icons: { items, buffs } });
+}
+
 /** Game data shipped with the site in ./resources/*.lua (the same Windower files you can load by hand).
     The parsed result is cached in IndexedDB and reused until the files change on the server. */
 async function loadBundledGameData(): Promise<void> {
@@ -208,7 +242,7 @@ async function loadBundledGameData(): Promise<void> {
     const sig = found.map(f => `${f.name}:${f.res.headers.get('etag') ?? ''}:${f.res.headers.get('last-modified') ?? ''}:${f.res.headers.get('content-length') ?? ''}`).join('|');
     const cached = await kvGet<{ sig: string; data: GameData }>(BUNDLED_KEY);
     if (cached && cached.sig === sig && cached.data.version === 1) {
-      if (!hasUserData) setState({ game: new GameIndex(cached.data) });
+      if (!hasUserData) { setState({ game: new GameIndex(cached.data) }); await applyIcons(base, cached.data.icons); }
       setState({ gameNote: `Loaded from cache (${found.map(f => f.name).join(', ')})` });
       return;
     }
@@ -218,7 +252,7 @@ async function loadBundledGameData(): Promise<void> {
     const { data } = buildGameData(files, 'Bundled resources: ' + files.map(f => f.name).join(', '));
     data.origin = 'bundled';
     await kvSet(BUNDLED_KEY, { sig, data });
-    if (!hasUserData) setState({ game: new GameIndex(data) });
+    if (!hasUserData) { setState({ game: new GameIndex(data) }); await applyIcons(base, data.icons); }
     setState({ gameNote: `Read ${files.map(f => f.name).join(', ')} from ${base}` });
   } catch (e) {
     setState({ gameNote: `Bundled resource files were found but could not be read: ${(e as Error).message}` });

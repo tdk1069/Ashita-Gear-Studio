@@ -6,8 +6,13 @@ import type { SlotName } from '../core/types';
 /** Bit order of the `slots` field in the Windower item resources (bit 0 = Main ... bit 15 = Back). */
 export const RESOURCE_SLOT_ORDER: SlotName[] = ['Main', 'Sub', 'Range', 'Ammo', 'Head', 'Body', 'Hands', 'Legs', 'Feet', 'Neck', 'Waist', 'Ear1', 'Ear2', 'Ring1', 'Ring2', 'Back'];
 
-/** [name, slotMask, level]. Level 0 means unknown. */
-export type ItemRow = [string, number, number];
+/** [in-game name, slotMask, level, full name or '', icon cell or -1]. Level 0 means unknown. The last two are only present in client extracts. */
+export type ItemRow = [string, number, number, string?, number?];
+export interface SpellInfo { id: number; n: string; skill: string; el: string; type: string; mp: number; cast: number; recast: number; lv: Record<string, number> }
+export interface AbilityInfo { id: number; n: string; type: string; mp: number; tp: number }
+export interface BuffInfo { id: number; n: string; icon: number }
+/** Names of the icon sprite sheets (without extension) found next to gamedata.json. */
+export interface IconSets { items?: string; buffs?: string }
 export interface GameData {
   version: 1;
   source: string;
@@ -18,6 +23,12 @@ export interface GameData {
   abilities: string[];
   weaponskills: string[];
   buffs: string[];
+  /** Richer details, present when the data came from a client extract. */
+  spellInfo?: SpellInfo[];
+  abilityInfo?: AbilityInfo[];
+  weaponskillInfo?: AbilityInfo[];
+  buffInfo?: BuffInfo[];
+  icons?: IconSets;
 }
 export const emptyGameData = (source = ''): GameData => ({ version: 1, source, items: [], spells: [], abilities: [], weaponskills: [], buffs: [] });
 
@@ -87,7 +98,7 @@ function rowsFromJson(v: unknown): ItemRow[] | null {
   if (Array.isArray(v)) {
     const rows: ItemRow[] = [];
     for (const e of v) {
-      if (Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'number') rows.push([e[0], e[1], Number(e[2]) || 0]);
+      if (Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'number') rows.push([e[0], e[1], Number(e[2]) || 0, typeof e[3] === 'string' ? e[3] : '', typeof e[4] === 'number' ? e[4] : -1]);
       else if (e && typeof e === 'object') {
         const o = e as { name?: unknown; en?: unknown; slots?: unknown; level?: unknown };
         const name = typeof o.name === 'string' ? o.name : typeof o.en === 'string' ? o.en : '';
@@ -145,7 +156,13 @@ export function buildGameData(files: LoadedFile[], source: string): { data: Game
         data.items.push(...rows);
         data.spells.push(...strList(o.spells)); data.abilities.push(...strList(o.abilities));
         data.weaponskills.push(...strList(o.weaponskills)); data.buffs.push(...strList(o.buffs));
-        summary.push(`${f.name}: ${rows.length.toLocaleString()} items`);
+        const keep = <T,>(a: unknown): T[] => (Array.isArray(a) ? (a as T[]) : []);
+        if (o.spellInfo) data.spellInfo = [...(data.spellInfo ?? []), ...keep<SpellInfo>(o.spellInfo)];
+        if (o.abilityInfo) data.abilityInfo = [...(data.abilityInfo ?? []), ...keep<AbilityInfo>(o.abilityInfo)];
+        if (o.weaponskillInfo) data.weaponskillInfo = [...(data.weaponskillInfo ?? []), ...keep<AbilityInfo>(o.weaponskillInfo)];
+        if (o.buffInfo) data.buffInfo = [...(data.buffInfo ?? []), ...keep<BuffInfo>(o.buffInfo)];
+        if (o.icons && typeof o.icons === 'object') data.icons = o.icons as IconSets;
+        summary.push(`${f.name}: ${rows.length.toLocaleString()} items, ${data.spells.length.toLocaleString()} spells, ${data.weaponskills.length.toLocaleString()} weaponskills, ${data.buffs.length.toLocaleString()} status effects`);
       } else {
         const rows = rowsFromJson(json);
         if (!rows) throw new Error(`${f.name} is JSON, but not an item list Gear Studio understands. Expected rows like ["Optical Hat", 16, 12] or {"Head": ["Optical Hat"]}.`);

@@ -263,3 +263,9 @@ button, input, select, textarea { color: inherit; }
 .results .result.custom { color: #e3bd62; }
 select, select option { background-color: #060a15; color: #e9edf9; }
 .linkbtn { background: none; border: 0; padding: 0; color: #e3bd62; text-decoration: underline; cursor: pointer; font: inherit; }
+
+.icon { display: inline-block; flex: none; background-repeat: no-repeat; vertical-align: middle; }
+.results .result .nm { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.results .result .nm > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.results .result .full { color: #9aa8d0; font-size: .85em; margin-left: .4rem; }
+.slot .item { display: flex; align-items: center; gap: .4rem; }

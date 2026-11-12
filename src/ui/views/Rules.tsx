@@ -1,4 +1,5 @@
 /* Rules tab: handlers, rule cards, nested ALL/ANY condition groups and actions. */
+import type { GameData } from '../../data/windower';
 import type { ReactElement } from 'react';
 import { useEffect, useRef } from 'react';
 import type { ActionType, Condition, ConditionGroup, HandlerId, Profile, Rule, RuleAction, SlotName, VisualRule } from '../../core';
@@ -283,10 +284,20 @@ export function RulesView(): ReactElement {
           </div>
         )}
       </div>
-      <datalist id="dl-spells">{game.data.spells.slice(0, 4000).map(x => <option key={x} value={x} />)}</datalist>
-      <datalist id="dl-abilities">{game.data.abilities.slice(0, 4000).map(x => <option key={x} value={x} />)}</datalist>
-      <datalist id="dl-weaponskills">{game.data.weaponskills.slice(0, 4000).map(x => <option key={x} value={x} />)}</datalist>
+      <datalist id="dl-spells">{spellOptions(game.data)}</datalist>
+      <datalist id="dl-abilities">{game.data.abilityInfo?.length ? game.data.abilityInfo.slice(0, 4000).map(x => <option key={x.id} value={x.n} label={[x.type, x.mp ? x.mp + ' MP' : '', x.tp ? x.tp + ' TP' : ''].filter(Boolean).join(' · ')} />) : game.data.abilities.slice(0, 4000).map(x => <option key={x} value={x} />)}</datalist>
+      <datalist id="dl-weaponskills">{game.data.weaponskillInfo?.length ? game.data.weaponskillInfo.slice(0, 4000).map(x => <option key={x.id} value={x.n} label={x.type} />) : game.data.weaponskills.slice(0, 4000).map(x => <option key={x} value={x} />)}</datalist>
       <datalist id="dl-buffs">{game.data.buffs.slice(0, 4000).map(x => <option key={x} value={x} />)}</datalist>
     </>
   );
+}
+
+/** Spell suggestions with skill, element and cheapest job level, so similar names are easy to tell apart. */
+function spellOptions(d: GameData): ReactElement[] {
+  if (!d.spellInfo?.length) return d.spells.slice(0, 4000).map(x => <option key={x} value={x} />);
+  return d.spellInfo.slice(0, 4000).map(x => {
+    const lv = Object.entries(x.lv).sort((a, b) => a[1] - b[1])[0];
+    const label = [x.skill, x.el, x.mp ? x.mp + ' MP' : '', lv ? `${lv[0]} ${lv[1]}` : ''].filter(Boolean).join(' · ');
+    return <option key={x.id} value={x.n} label={label} />;
+  });
 }

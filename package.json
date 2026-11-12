@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "convert:data": "tsx scripts/convert-resources.ts",
+    "extract:client": "tsx scripts/extract-client-data.ts",
     "build:standalone": "node scripts/build-standalone.mjs"
   },
   "dependencies": {
